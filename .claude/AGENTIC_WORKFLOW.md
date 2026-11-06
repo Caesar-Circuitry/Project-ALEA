@@ -1,0 +1,116 @@
+# ALEA agentic workflow
+
+How Claude Code works in this repo: a coordinate-only main session, subagents pinned to the
+cheapest adequate model, and the rules that are enforced by Claude Code rather than requested in
+a prompt. Built from the Claude Code best-practices, subagent, hooks, permissions and model docs
+(read in full on 2026-11-06).
+
+## 1. The shape: a lead that never edits
+
+`.claude/settings.json` sets `"agent": "lead"` and `"model": "sonnet"`, so every session in this
+repo starts as the `lead` agent on Sonnet. Per the subagent docs, running the main thread as a
+named agent applies that agent's `tools` list to the main session, so:
+
+- `lead` has `Read, Grep, Glob, Bash, Agent(...)`, planning and web tools, and **no Edit, Write,
+  MultiEdit or NotebookEdit**. It cannot edit a file even if asked.
+- `lead`'s `Agent(explorer, implementer, physics-reviewer, docs-writer, orchestrator)` entry is an
+  allowlist. It cannot spawn the built-in Explore or Plan agents (Explore runs on Opus for
+  subscription accounts, which is why we keep our own Haiku explorer).
+- `.claude/hooks/guard_lead.py` limits the lead's Bash to checks and read-only git. A shell
+  write (`sed -i`, redirects, `mv`, `rm`, `git commit`) is rejected with a pointer to the right
+  subagent. The hook only acts when the hook input's `agent_type` is `lead`.
+- `lead`'s body is empty on purpose: a non-empty body would replace Claude Code's own system
+  prompt. Its instructions come from `CLAUDE.md`, which still loads.
+
+The lead's job each turn: understand, plan (plan mode for multi-file work), spawn, collect,
+verify with `just lint` / `just test` / `just selftest`, report with evidence.
+
+## 2. Model tiers by problem type
+
+| Tier | Model | Agent | Use for |
+|---|---|---|---|
+| 0 | Haiku | `explorer`, `docs-writer` | lookups, renames, READMEs, decision records, commit text, CSV/log parsing scripts |
+| 1 | Sonnet | `lead`, `implementer`, unlabeled spawns | planning, coordination, tests, importers, CI YAML, models, Streamlit, notebooks, non-physics refactors |
+| 2 | Opus | `physics-reviewer`; `/model opus` for a session | anything under `alea/sim`, `alea/game`, `alea/hifi`, `tests/golden`; `/code-review`; CI failure diagnosis; the dsim port; Warp kernels |
+| 3 | Fable | `orchestrator` only | complex multi-agent, multi-PR work the user has explicitly approved for Fable |
+
+Rules:
+- Start cheap. Escalate one tier after two failures, not before.
+- `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` (settings `env`) is the default for any spawn without a
+  pinned model. It is not forced, so agent frontmatter still wins.
+- Spawning `orchestrator` triggers a permission prompt (`permissions.ask: Agent(orchestrator)`),
+  as does any spawn that passes `model: fable`. That prompt is the Fable gate.
+- Effort stays at the model default (`medium`). Raise it per session with `/effort high` for a
+  tricky physics bug; never leave it high for routine work.
+
+## 3. Standard loop
+
+1. **Plan mode** for anything multi-file (`Shift+Tab`). Ask questions early with
+   `AskUserQuestion`; never ask "is the plan OK" in prose.
+2. **Explore** with `explorer` when the answer needs a sweep of many files. For a known file,
+   the lead reads it directly; a subagent costs more than a `Read`.
+3. **Implement** with `implementer`. One task per spawn, with the files to touch, what must not
+   change, and the check that defines done. Use `isolation: "worktree"` when two implementers run
+   at once. The implementer's Stop hook (`.claude/hooks/subagent_gate.py`) re-runs lint and tests
+   and refuses to let it finish while they fail, up to three times.
+4. **Verify** in the lead: `just lint`, `just test`; `just selftest` after any sim or game change;
+   `just docs` after docs changes; `just robot` after `robot/` changes. Quote the output.
+5. **Review** with `physics-reviewer` for frozen paths, `/code-review` otherwise.
+6. **Ship** with `/pr`: a forked `implementer` runs the checks, commits, pushes (asks first) and
+   prints the compare link with the PR template filled in. Humans merge.
+
+## 4. What is enforced versus requested
+
+Per the best-practices doc: a `CLAUDE.md` line is a guideline Claude may weigh; a hook, deny
+rule or tool list is applied by Claude Code every time. Keep the enforced set small.
+
+| Rule | Mechanism | Where |
+|---|---|---|
+| lead never edits files | `tools` allowlist on the `lead` agent | `.claude/agents/lead.md` |
+| lead's shell is read-only + checks | PreToolUse hook, `agent_type == lead` | `.claude/hooks/guard_lead.py` |
+| frozen physics files | PreToolUse hook, all agents | `.claude/hooks/guard_physics.py` |
+| implementer finishes green | SubagentStop hook in frontmatter | `.claude/hooks/subagent_gate.py` |
+| Fable only with approval | `permissions.ask` on `Agent(orchestrator)` and `Agent(model:fable)` | `.claude/settings.json` |
+| push asks the user | `permissions.ask: Bash(git push *)` | `.claude/settings.json` |
+| no secrets read | `permissions.deny: Read(./.env)` | `.claude/settings.json` |
+| big files, private keys | pre-commit | `.pre-commit-config.yaml` |
+| physics review | CODEOWNERS + branch protection | `.github/CODEOWNERS`, decision 0004 |
+
+Everything else (units in names, README per folder, cross-platform habits) is a guideline in
+`CLAUDE.md` or a path-scoped rule in `.claude/rules/`.
+
+## 5. Skills (procedures, loaded on demand)
+
+| Skill | Invoked by | Does |
+|---|---|---|
+| `/pr` | user only | forks an `implementer`: checks, commit, push, PR link with template |
+| `/physics-change` | user only | the procedure for an approved change to a frozen file |
+
+Skills are for multi-step procedures with side effects; `CLAUDE.md` stays short. No MCP servers:
+GitHub goes through `gh` (cheaper in context), and nothing else external is in scope yet.
+
+## 6. Parallelism and scale
+
+- One worktree per concurrent implementer; one branch, one PR each. Never two agents editing
+  `alea/game/` or `conf/` at once.
+- Studies write under Hydra `outputs/` (git-ignored), never into `tests/golden/`.
+- Children report to the lead; they do not message each other.
+- For work bigger than a handful of agents (the dsim hive-tipping port with parallel
+  validation), the options in order of cost: an `orchestrator` run (Fable, asks first), or a
+  dynamic workflow (`ultracode` keyword, runs on the session model, saved to
+  `.claude/workflows/`). Agent teams stay off (experimental, ~7× tokens).
+- Context hygiene: `/clear` between unrelated tasks, `/usage` to see what a subagent type costs,
+  short summaries back from every spawn.
+
+## 7. Path-scoped rules
+
+`.claude/rules/physics.md` loads only when an agent touches `alea/sim`, `alea/game`,
+`alea/hifi` or `tests/golden`; `.claude/rules/cross-platform.md` loads for Python, TOML, CI
+and `justfile` edits. They cost nothing until needed.
+
+## 8. Verify the setup
+
+- `/status` shows `@lead` in the startup header and lists `Project settings` under sources.
+- Ask the lead to edit a file: it should spawn `implementer` or say it has no Edit tool.
+- `uv run pytest tests/test_claude_config.py tests/test_guard_hook.py` checks the config shape,
+  the model pins and both guard hooks.
