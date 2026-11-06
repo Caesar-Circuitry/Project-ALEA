@@ -63,5 +63,7 @@ def test_bypass_env() -> None:
 
 
 def test_bad_json_is_ignored() -> None:
-    proc = subprocess.run([sys.executable, str(HOOK)], input="not json", capture_output=True)
+    proc = subprocess.run(
+        [sys.executable, str(HOOK)], input="not json", capture_output=True, text=True
+    )
     assert proc.returncode == 0
