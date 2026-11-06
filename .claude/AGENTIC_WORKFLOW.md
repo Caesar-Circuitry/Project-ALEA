@@ -1,64 +1,116 @@
 # ALEA agentic workflow
 
-How Claude Code (and any other agent) should work in this repo: which model for which problem,
-the standard loop, and how to run work in parallel without stepping on the physics.
+How Claude Code works in this repo: a coordinate-only main session, subagents pinned to the
+cheapest adequate model, and the rules that are enforced by Claude Code rather than requested in
+a prompt. Built from the Claude Code best-practices, subagent, hooks, permissions and model docs
+(read in full on 2026-11-06).
 
-## 1. Model tiers by problem type
+## 1. The shape: a lead that never edits
 
-Start with the cheapest tier that can do the job. Escalate one tier when it fails twice, not before.
+`.claude/settings.json` sets `"agent": "lead"` and `"model": "sonnet"`, so every session in this
+repo starts as the `lead` agent on Sonnet. Per the subagent docs, running the main thread as a
+named agent applies that agent's `tools` list to the main session, so:
 
-| Tier | Model | Use for | Never for |
+- `lead` has `Read, Grep, Glob, Bash, Agent(...)`, planning and web tools, and **no Edit, Write,
+  MultiEdit or NotebookEdit**. It cannot edit a file even if asked.
+- `lead`'s `Agent(explorer, implementer, physics-reviewer, docs-writer, orchestrator)` entry is an
+  allowlist. It cannot spawn the built-in Explore or Plan agents (Explore runs on Opus for
+  subscription accounts, which is why we keep our own Haiku explorer).
+- `.claude/hooks/guard_lead.py` limits the lead's Bash to checks and read-only git. A shell
+  write (`sed -i`, redirects, `mv`, `rm`, `git commit`) is rejected with a pointer to the right
+  subagent. The hook only acts when the hook input's `agent_type` is `lead`.
+- `lead`'s body is empty on purpose: a non-empty body would replace Claude Code's own system
+  prompt. Its instructions come from `CLAUDE.md`, which still loads.
+
+The lead's job each turn: understand, plan (plan mode for multi-file work), spawn, collect,
+verify with `just lint` / `just test` / `just selftest`, report with evidence.
+
+## 2. Model tiers by problem type
+
+| Tier | Model | Agent | Use for |
 |---|---|---|---|
-| 0 | **Haiku** | file and symbol lookups, renames, README and boilerplate text, commit messages, docs nav, CSV/log parsing scripts, formatting fixes, dependency bumps | anything under the frozen paths (below), design decisions |
-| 1 | **Sonnet** (default implementer) | tests, importers, CI YAML, Streamlit pages, notebooks, SQLAlchemy models, refactors that do not touch frozen paths, docs pages | physics, Warp kernels, release decisions |
-| 2 | **Opus** | anything touching `alea/sim/`, `alea/game/`, `alea/hifi/`, `tests/golden/`; `/code-review`; CI failure diagnosis; decision records; the dsim port; Warp kernels; plan mode for multi-PR work | routine edits a lower tier can do |
-| 3 | **Fable** | complex multi-agent orchestration only: for example running the dsim TypeScript → NumPy → Warp port with parallel validation agents, or a cross-cutting migration that spans five or more PRs | **anything else, and never without the user saying "use Fable" for that specific task** |
+| 0 | Haiku | `explorer`, `docs-writer` | lookups, renames, READMEs, decision records, commit text, CSV/log parsing scripts |
+| 1 | Sonnet | `lead`, `implementer`, unlabeled spawns | planning, coordination, tests, importers, CI YAML, models, Streamlit, notebooks, non-physics refactors |
+| 2 | Opus | `physics-reviewer`; `/model opus` for a session | anything under `alea/sim`, `alea/game`, `alea/hifi`, `tests/golden`; `/code-review`; CI failure diagnosis; the dsim port; Warp kernels |
+| 3 | Fable | `orchestrator` only | complex multi-agent, multi-PR work the user has explicitly approved for Fable |
 
 Rules:
-- Interactive sessions run on Opus or Sonnet (`/model`). Do not switch to Fable yourself.
-- When spawning a subagent, pass `model: haiku|sonnet|opus` per this table, or use an agent from
-  `.claude/agents/`, whose frontmatter already pins the model.
-- The `orchestrator` agent is the only Fable-pinned definition. Spawn it only after the user has
-  approved Fable for the task in the current conversation. Say so in the spawn prompt.
-- "Frozen paths" = `alea/sim/shotsim.py`, `alea/sim/study.py`, `alea/game/`, `tests/golden/`.
-  Edits there are Opus-tier, hook-guarded, and need a human sign-off on the PR.
+- Start cheap. Escalate one tier after two failures, not before.
+- `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` (settings `env`) is the default for any spawn without a
+  pinned model. It is not forced, so agent frontmatter still wins.
+- Spawning `orchestrator` triggers a permission prompt (`permissions.ask: Agent(orchestrator)`),
+  as does any spawn that passes `model: fable`. That prompt is the Fable gate.
+- Effort stays at the model default (`medium`). Raise it per session with `/effort high` for a
+  tricky physics bug; never leave it high for routine work.
 
-## 2. Standard loop
+## 3. Standard loop
 
-1. **Plan mode** for anything multi-file. Ask questions early; do not ask "is the plan OK" in text.
-2. **Explore** (Haiku `explorer`): find the files, patterns and existing helpers. Read-only.
-3. **Plan** (Opus, or Sonnet for a single-module task): write the plan file, name files to touch,
-   name what must not change, say how it will be verified.
-4. **Implement** (Sonnet `implementer`), in a git worktree when more than one agent is active.
-   Small commits with clear messages on a `feature/…` or `setup/…` branch.
-5. **Verify**: `just lint`, `just test`; `just selftest` whenever `alea/sim` or `alea/game` changed;
-   `just docs` when `docs/` or `mkdocs.yml` changed; `just robot` when `robot/` changed.
-6. **Review** (Opus `physics-reviewer` for frozen paths, `/code-review` otherwise).
-7. **PR** with `.github/pull_request_template.md`: what changed, how tested, "self-test passed?",
-   "changes physics?" (if yes: explanation + Java comparison attached). Humans merge.
+1. **Plan mode** for anything multi-file (`Shift+Tab`). Ask questions early with
+   `AskUserQuestion`; never ask "is the plan OK" in prose.
+2. **Explore** with `explorer` when the answer needs a sweep of many files. For a known file,
+   the lead reads it directly; a subagent costs more than a `Read`.
+3. **Implement** with `implementer`. One task per spawn, with the files to touch, what must not
+   change, and the check that defines done. Use `isolation: "worktree"` when two implementers run
+   at once. The implementer's Stop hook (`.claude/hooks/subagent_gate.py`) re-runs lint and tests
+   and refuses to let it finish while they fail, up to three times.
+4. **Verify** in the lead: `just lint`, `just test`; `just selftest` after any sim or game change;
+   `just docs` after docs changes; `just robot` after `robot/` changes. Quote the output.
+5. **Review** with `physics-reviewer` for frozen paths, `/code-review` otherwise.
+6. **Ship** with `/pr`: a forked `implementer` runs the checks, commits, pushes (asks first) and
+   prints the compare link with the PR template filled in. Humans merge.
 
-## 3. Parallelism rules
+## 4. What is enforced versus requested
 
-- One worktree per agent (`isolation: "worktree"`), one branch per agent, one PR per agent.
-- No two agents edit `alea/game/` or `conf/` at the same time. Serialize those.
-- Agents that run studies write under Hydra `outputs/` (git-ignored); never into `tests/golden/`.
-- A parent agent collects results from children; children do not message each other.
-- Fan-out is for genuinely parallel work (independent importers, independent docs pages). It is
-  not for "thoroughness". A single agent with the right tools is the default.
+Per the best-practices doc: a `CLAUDE.md` line is a guideline Claude may weigh; a hook, deny
+rule or tool list is applied by Claude Code every time. Keep the enforced set small.
 
-## 4. Cost hygiene
+| Rule | Mechanism | Where |
+|---|---|---|
+| lead never edits files | `tools` allowlist on the `lead` agent | `.claude/agents/lead.md` |
+| lead's shell is read-only + checks | PreToolUse hook, `agent_type == lead` | `.claude/hooks/guard_lead.py` |
+| frozen physics files | PreToolUse hook, all agents | `.claude/hooks/guard_physics.py` |
+| implementer finishes green | SubagentStop hook in frontmatter | `.claude/hooks/subagent_gate.py` |
+| Fable only with approval | `permissions.ask` on `Agent(orchestrator)` and `Agent(model:fable)` | `.claude/settings.json` |
+| push asks the user | `permissions.ask: Bash(git push *)` | `.claude/settings.json` |
+| no secrets read | `permissions.deny: Read(./.env)` | `.claude/settings.json` |
+| big files, private keys | pre-commit | `.pre-commit-config.yaml` |
+| physics review | CODEOWNERS + branch protection | `.github/CODEOWNERS`, decision 0004 |
 
-- Haiku first for anything that is lookup or boilerplate. Sonnet for most code.
-- One Opus review is cheaper than three Sonnet retries on physics-adjacent code.
-- No subagent for a task you can finish inline with your own tools.
-- Long sessions: summarize state into the plan file so a restart does not re-explore.
+Everything else (units in names, README per folder, cross-platform habits) is a guideline in
+`CLAUDE.md` or a path-scoped rule in `.claude/rules/`.
 
-## 5. Guard rails in this repo
+## 5. Skills (procedures, loaded on demand)
 
-- `.claude/settings.json` → `PreToolUse` hook `hooks/guard_physics.py` rejects Edit/Write/Bash
-  writes to `alea/sim/shotsim.py` and `alea/sim/study.py` unless `ALEA_ALLOW_PHYSICS_EDIT=1`.
-- Pre-commit: ruff, nbstripout, 1 MB file limit (except `tests/golden/`), private-key detection.
-- CI (PR 3) runs lint + CPU tests on macOS arm64, Linux x86-64/arm64, Windows x86-64/arm64.
-- CODEOWNERS routes physics paths to the physics maintainers.
+| Skill | Invoked by | Does |
+|---|---|---|
+| `/pr` | user only | forks an `implementer`: checks, commit, push, PR link with template |
+| `/physics-change` | user only | the procedure for an approved change to a frozen file |
 
-See `docs/decisions/0003-agentic-workflow-and-models.md` for the reasoning.
+Skills are for multi-step procedures with side effects; `CLAUDE.md` stays short. No MCP servers:
+GitHub goes through `gh` (cheaper in context), and nothing else external is in scope yet.
+
+## 6. Parallelism and scale
+
+- One worktree per concurrent implementer; one branch, one PR each. Never two agents editing
+  `alea/game/` or `conf/` at once.
+- Studies write under Hydra `outputs/` (git-ignored), never into `tests/golden/`.
+- Children report to the lead; they do not message each other.
+- For work bigger than a handful of agents (the dsim hive-tipping port with parallel
+  validation), the options in order of cost: an `orchestrator` run (Fable, asks first), or a
+  dynamic workflow (`ultracode` keyword, runs on the session model, saved to
+  `.claude/workflows/`). Agent teams stay off (experimental, ~7× tokens).
+- Context hygiene: `/clear` between unrelated tasks, `/usage` to see what a subagent type costs,
+  short summaries back from every spawn.
+
+## 7. Path-scoped rules
+
+`.claude/rules/physics.md` loads only when an agent touches `alea/sim`, `alea/game`,
+`alea/hifi` or `tests/golden`; `.claude/rules/cross-platform.md` loads for Python, TOML, CI
+and `justfile` edits. They cost nothing until needed.
+
+## 8. Verify the setup
+
+- `/status` shows `@lead` in the startup header and lists `Project settings` under sources.
+- Ask the lead to edit a file: it should spawn `implementer` or say it has no Edit tool.
+- `uv run pytest tests/test_claude_config.py tests/test_guard_hook.py` checks the config shape,
+  the model pins and both guard hooks.

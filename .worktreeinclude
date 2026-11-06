@@ -1,0 +1,2 @@
+# Git-ignored files Claude Code copies into each new worktree (small files only).
+.env

@@ -1,4 +1,10 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "sonnet",
+  "agent": "lead",
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
+  },
   "permissions": {
     "allow": [
       "Bash(uv sync*)",
@@ -13,6 +19,17 @@
       "Bash(git diff*)",
       "Bash(git log*)",
       "Bash(git branch*)"
+    ],
+    "ask": [
+      "Agent(orchestrator)",
+      "Agent(model:fable)",
+      "Bash(git push *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)"
     ]
   },
   "hooks": {
@@ -22,7 +39,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project python .claude/hooks/guard_physics.py"
+            "command": "uv run --no-project python .claude/hooks/guard_physics.py",
+            "timeout": 20,
+            "onFailure": "block",
+            "statusMessage": "physics guard"
+          },
+          {
+            "type": "command",
+            "command": "uv run --no-project python .claude/hooks/guard_lead.py",
+            "timeout": 20,
+            "onFailure": "block",
+            "statusMessage": "lead guard"
           }
         ]
       }

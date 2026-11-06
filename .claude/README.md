@@ -1,13 +1,18 @@
 # .claude
 
-Claude Code configuration for this repo.
+Claude Code configuration for this repo. Every session here runs as the `lead` agent, which
+coordinates subagents and never edits files itself.
 
-- `AGENTIC_WORKFLOW.md` — which model handles which kind of problem, the standard loop, and the
-  rules for running agents in parallel. Read it before spawning subagents.
-- `agents/` — subagent definitions. Each file's `model:` frontmatter pins the tier for that role.
-- `settings.json` — shared permissions allowlist and the physics-guard hook.
-- `hooks/guard_physics.py` — blocks edits to the frozen physics files unless explicitly allowed.
+- `AGENTIC_WORKFLOW.md` — the model tiers, the standard loop, what is enforced vs requested.
+- `settings.json` — default model (Sonnet), `agent: lead`, permission rules (Fable spawns and
+  `git push` ask; `.env` is unreadable), and the two guard hooks.
+- `agents/` — `lead`, `explorer` (Haiku), `implementer` (Sonnet, finishes green),
+  `docs-writer` (Haiku), `physics-reviewer` (Opus), `orchestrator` (Fable, asks first).
+- `hooks/` — `guard_physics.py` (frozen sim files, all agents), `guard_lead.py` (lead's shell is
+  checks-only), `subagent_gate.py` (implementer's lint + test gate).
+- `rules/` — path-scoped guidance that loads only when matching files are touched.
+- `skills/` — `/pr` and `/physics-change`, user-invoked procedures.
 
-Personal overrides go in `.claude/settings.local.json` (git-ignored by Claude Code).
+Personal overrides go in `settings.local.json` (git-ignored) or `CLAUDE.local.md` at the root.
 
 **Roadmap phase:** all
