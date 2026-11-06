@@ -1,0 +1,15 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.sh text eol=lf
+gradlew text eol=lf
+*.py text diff=python
+*.ipynb text
+*.npy binary
+*.npz binary
+*.rlog binary
+*.wpilog binary
+*.png binary
+*.jpg binary
+*.jar binary
+*.aar binary
