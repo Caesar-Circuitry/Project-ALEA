@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+build/
+dist/
+.ipynb_checkpoints/
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Data and results (never in git)
+data/raw/
+data/processed/
+results/
+mlruns/
+outputs/
+multirun/
+*.db
+*.sqlite
+_incoming/
+
+# Big file types; golden test files are re-included below
+*.mp4
+*.mov
+*.mkv
+*.wpilog
+*.rlog
+*.npz
+*.onnx
+*.engine
+*.pt
+*.zip
+!tests/golden/**
+
+# FTC / Android / Gradle
+robot/.gradle/
+robot/**/build/
+robot/.idea/
+local.properties
+*.apk
+*.aab
+.gradle/
+
+# IDE / OS
+.idea/
+.vscode/
+!.vscode/extensions.json
+*.swp
+.DS_Store
+Thumbs.db
+
+# MkDocs
+site/
