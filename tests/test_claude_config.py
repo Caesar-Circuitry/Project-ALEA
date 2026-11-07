@@ -78,6 +78,7 @@ def test_hook_commands_use_quoted_project_dir() -> None:
 def test_settings_defaults() -> None:
     s = settings()
     assert s["model"] == "sonnet"
+    assert s["advisorModel"] == "opus"
     assert s["agent"] == "lead"
     assert s["env"]["CLAUDE_CODE_SUBAGENT_MODEL"] == "sonnet"
     ask = s["permissions"]["ask"]
