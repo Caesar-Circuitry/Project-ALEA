@@ -18,6 +18,7 @@ subagents, each pinned to a model:
 | write or change code, tests, CI, configs | `implementer` | Sonnet |
 | write or change docs, READMEs, decision records | `docs-writer` | Haiku |
 | review anything under `alea/sim`, `alea/game`, `alea/hifi`, `tests/golden` | `physics-reviewer` | Opus |
+| check a finished branch before /pr | `verifier` | Sonnet |
 | coordinate a multi-agent, multi-PR job | `orchestrator` | Fable, asks the user first |
 
 One subagent per task, worktree isolation when two run at once, short summaries back.

@@ -13,7 +13,7 @@ named agent applies that agent's `tools` list to the main session, so:
 
 - `lead` has `Read, Grep, Glob, Bash, Agent(...)`, planning and web tools, and **no Edit, Write,
   MultiEdit or NotebookEdit**. It cannot edit a file even if asked.
-- `lead`'s `Agent(explorer, implementer, physics-reviewer, docs-writer, orchestrator)` entry is an
+- `lead`'s `Agent(explorer, implementer, physics-reviewer, verifier, docs-writer, orchestrator)` entry is an
   allowlist. It cannot spawn the built-in Explore or Plan agents (Explore runs on Opus for
   subscription accounts, which is why we keep our own Haiku explorer).
 - `.claude/hooks/guard_lead.py` limits the lead's Bash to checks and read-only git. A shell
@@ -30,7 +30,7 @@ verify with `just lint` / `just test` / `just selftest`, report with evidence.
 | Tier | Model | Agent | Use for |
 |---|---|---|---|
 | 0 | Haiku | `explorer`, `docs-writer` | lookups, renames, READMEs, decision records, commit text, CSV/log parsing scripts |
-| 1 | Sonnet | `lead`, `implementer`, unlabeled spawns | planning, coordination, tests, importers, CI YAML, models, Streamlit, notebooks, non-physics refactors |
+| 1 | Sonnet | `lead`, `implementer`, `verifier`, unlabeled spawns | planning, coordination, tests, importers, CI YAML, models, Streamlit, notebooks, non-physics refactors |
 | 2 | Opus | `physics-reviewer`; `/model opus` for a session | anything under `alea/sim`, `alea/game`, `alea/hifi`, `tests/golden`; `/code-review`; CI failure diagnosis; the dsim port; Warp kernels |
 | 3 | Fable | `orchestrator` only | complex multi-agent, multi-PR work the user has explicitly approved for Fable |
 
@@ -54,7 +54,8 @@ Rules:
    at once. The implementer's Stop hook (`.claude/hooks/subagent_gate.py`) re-runs lint and tests
    and refuses to let it finish while they fail, up to three times.
 4. **Verify** in the lead: `just lint`, `just test`; `just selftest` after any sim or game change;
-   `just docs` after docs changes; `just robot` after `robot/` changes. Quote the output.
+   `just docs` after docs changes; `just robot` after `robot/` changes. Quote the output. For a whole branch the lead also spawns
+   `verifier` (fresh context, read-only) before `/pr`, and still runs the quick checks itself.
 5. **Review** with `physics-reviewer` for frozen paths, `/code-review` otherwise.
 6. **Ship** with `/pr`: a forked `implementer` runs the checks, commits, pushes (asks first) and
    prints the compare link with the PR template filled in. Humans merge.

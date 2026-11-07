@@ -62,7 +62,14 @@ def test_lead_is_coordinate_only() -> None:
     allow = re.search(r"Agent\(([^)]*)\)", tools)
     assert allow, "lead must carry an Agent(...) allowlist"
     allowed = {a.strip() for a in allow.group(1).split(",")}
-    assert allowed == {"explorer", "implementer", "physics-reviewer", "docs-writer", "orchestrator"}
+    assert allowed == {
+        "explorer",
+        "implementer",
+        "physics-reviewer",
+        "verifier",
+        "docs-writer",
+        "orchestrator",
+    }
     assert lead["_body"] == "", "a non-empty body would replace Claude Code's system prompt"
 
 
@@ -73,6 +80,7 @@ def test_agent_models_are_pinned() -> None:
         "explorer",
         "implementer",
         "physics-reviewer",
+        "verifier",
         "docs-writer",
         "orchestrator",
     }
@@ -82,12 +90,13 @@ def test_agent_models_are_pinned() -> None:
     assert defs["docs-writer"]["model"] == "haiku"
     assert defs["implementer"]["model"] == "sonnet"
     assert defs["physics-reviewer"]["model"] == "opus"
+    assert defs["verifier"]["model"] == "sonnet"
     assert [n for n, f in defs.items() if f["model"] == "fable"] == ["orchestrator"]
 
 
 def test_read_only_agents_have_no_write_tools() -> None:
     defs = agents()
-    for name in ("explorer", "physics-reviewer"):
+    for name in ("explorer", "physics-reviewer", "verifier"):
         tools = defs[name]["tools"]
         assert "Edit" not in tools and "Write" not in tools, name
 
