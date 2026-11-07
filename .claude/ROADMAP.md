@@ -15,8 +15,8 @@ Last updated: 2026-11-07.
 | 3 | `setup/03-ci` | CI on ubuntu, macOS, Windows; Dependabot; PR template | merged (#3), **partial** | |
 | 3b | `setup/03b-ci-complete` | Finish PR 3, see below | merged (#8): four runners, Windows 11 ARM dropped; Dependabot PRs resolved 2026-11-07 (#4, #5, #10, #11 merged; #6, #9 closed; Gradle pinned to v5 in #17) | |
 | 4 | `setup/04-move-sim` | Move the shot sim in, physics frozen | merged (#16) | |
-| 5 | `setup/05-robot-contract` | `docs/robot-interface.md`, sample robot, contract test | **next** | `_incoming/robot_code/` |
-| 6 | `setup/06-data-importers` | SQLAlchemy models, `.rlog` reader, `.wpilog` reader | todo | PR 5 (key contract) |
+| 5 | `setup/05-robot-contract` | `docs/robot-interface.md`, sample robot, contract test | merged (#19) | |
+| 6 | `setup/06-data-importers` | SQLAlchemy models, `.rlog` reader, `.wpilog` reader | **next** | |
 | 7 | `setup/07-dev-env-docs` | Dev containers, `hpc/`, MkDocs site, notebook, README | todo | `_incoming/` docs text |
 | 8 | `setup/08-hifi-stub` | `alea/hifi` stub, `fidelity` switch, decision 0005, delete `_incoming/` | todo | PR 4 |
 
@@ -61,17 +61,22 @@ uv run python _incoming/alea_project/code/selftest.py cpu
 
 At that commit, 100.000 % of the 10,000 golden shots agree. The bar is at least 99.9 %.
 
-Record these shasums (SHA-1) for the byte comparison in PR 4:
+Current hashes of the frozen files in the repo. `tests/test_frozen_files.py` enforces the SHA-1
+values in CI.
 
-| File | shasum |
-|---|---|
-| `shotsim.py` | `a2e96d19db3f3f0d9f72653a939fa8513883c974` |
-| `study.py` | `e2f14e2854c7647fa2a7f0126b84244f25df7549` |
-| `golden_shots.npy` | `2a13bb587528795e350fc0577e40fb2f7d36bcf4` |
+| File | SHA-1 (`shasum -a 1`) | Git blob (`git hash-object`) |
+|---|---|---|
+| `alea/sim/shotsim.py` | `a2e96d19db3f3f0d9f72653a939fa8513883c974` | `b0ef01c353787dd74fee7a25dfb72b27c105c8c9` |
+| `alea/sim/study.py` | `fd903a17a229e6c2b8c6e272be99bfb5421c203a` | `df8fed7170a8fbb9bfaf20618c5533f46d614caf` |
+| `tests/golden/golden_shots.npy` | `2a13bb587528795e350fc0577e40fb2f7d36bcf4` | `0c8b180cd40808351b2278ff9050c86519c58fd4` |
 
 ```
-shasum -a 1 _incoming/alea_project/code/shotsim.py
+shasum -a 1 alea/sim/shotsim.py
+git hash-object alea/sim/shotsim.py
 ```
+
+`study.py` differs from the original in `_incoming/` (SHA-1 `e2f14e2854c7647fa2a7f0126b84244f25df7549`)
+only in its import line: `from shotsim import` became `from alea.sim.shotsim import`.
 
 Windows: `certutil -hashfile <file> SHA1`.
 
@@ -80,7 +85,7 @@ needs the user's approval through `/physics-change`. Never regenerate `golden_sh
 it is missing, stop and ask.
 
 ### 4: move the sim (physics frozen)
-- Record the SHA-256 of `shotsim.py` and `study.py` in the PR body before anything moves.
+- Record the SHA-1 of `shotsim.py` and `study.py` in the PR body before anything moves.
 - Move the sim files into `alea/sim/` with `git mv`. Only import lines may change in the two
   frozen files.
 - Game constants into `alea/game/biobuzz.py` with `# source:` comments. Snapshot them in

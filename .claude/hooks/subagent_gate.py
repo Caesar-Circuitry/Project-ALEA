@@ -6,8 +6,6 @@ Claude Code hands back to the subagent as its next instruction. Gives up after t
 agent so an unfixable failure reaches the lead instead of looping. Pure stdlib.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import subprocess
@@ -30,7 +28,7 @@ def main() -> int:
         payload = json.load(sys.stdin)
     except Exception:
         payload = {}
-    cwd = Path(payload.get("cwd") or os.getcwd())
+    cwd = Path(payload.get("cwd") or Path.cwd())
     if not (cwd / "pyproject.toml").exists():
         return 0
     counter_dir = Path(payload.get("scratchpad_dir") or tempfile.gettempdir())

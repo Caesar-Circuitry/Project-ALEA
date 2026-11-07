@@ -58,6 +58,7 @@ local.properties
 .idea/
 .vscode/*
 !.vscode/extensions.json
+!.vscode/README.md
 !.vscode/settings.json
 *.swp
 .DS_Store

@@ -1,8 +1,6 @@
 """The committed Claude Code configuration keeps its shape: Sonnet default, coordinate-only lead,
 pinned subagent models, Fable gated, hooks pointing at files that exist."""
 
-from __future__ import annotations
-
 import json
 import re
 from pathlib import Path
@@ -26,7 +24,11 @@ def frontmatter(path: Path) -> dict[str, str]:
 
 
 def agents() -> dict[str, dict[str, str]]:
-    return {p.stem: frontmatter(p) for p in sorted((CLAUDE / "agents").glob("*.md"))}
+    return {
+        p.stem: frontmatter(p)
+        for p in sorted((CLAUDE / "agents").glob("*.md"))
+        if p.name != "README.md"
+    }
 
 
 def settings() -> dict:
@@ -59,6 +61,8 @@ def hook_commands() -> list[str]:
 
     walk(settings().get("hooks", {}))
     for path in sorted((CLAUDE / "agents").glob("*.md")):
+        if path.name == "README.md":
+            continue
         match = re.match(r"^---\n(.*?)\n---", path.read_text(encoding="utf-8"), re.S)
         assert match, f"{path} has no frontmatter"
         commands += re.findall(r"^\s*(?:-\s*)?command:\s*(.+)$", match.group(1), re.M)
@@ -85,7 +89,9 @@ def test_settings_defaults() -> None:
     assert "Agent(orchestrator)" in ask
     assert "Agent(model:fable)" in ask
     assert "Bash(git push *)" in ask
-    assert "Read(./.env)" in s["permissions"]["deny"]
+    deny = s["permissions"]["deny"]
+    assert "Read(./.env)" in deny
+    assert "Bash(cat .env)" in deny  # `Bash(cat *)` is allowed, so .env needs its own deny
 
 
 def test_hooks_point_at_existing_scripts_and_fail_closed() -> None:

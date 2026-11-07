@@ -49,7 +49,11 @@
       "Read(./.env)",
       "Read(./.env.local)",
       "Read(./**/*.pem)",
-      "Read(./**/*.key)"
+      "Read(./**/*.key)",
+      "Bash(cat .env)",
+      "Bash(cat .env.local)",
+      "Bash(cat ./.env)",
+      "Bash(cat ./.env.local)"
     ]
   },
   "hooks": {

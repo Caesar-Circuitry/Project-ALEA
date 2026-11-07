@@ -1,10 +1,13 @@
 """V2: the study kernel's robot logic and randomness, checked against the REAL robot code and
 the Java sim. Needs ../rtout (AimDump, built from the robot code) and ../bb/out (ShotDump)."""
 
+import atexit
 import math
 import os
 import subprocess
+import sys
 import tempfile
+from pathlib import Path
 
 import numpy as np
 import warp as wp
@@ -25,13 +28,28 @@ from alea.sim.study import (
     frame_footprint,
 )
 
-S = os.environ.get(
-    "ALEA_JAVA_ROOT",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", ".."),
-)  # folder holding rtout/ and bb/
+# folder holding rtout/ and bb/
+S = Path(os.environ.get("ALEA_JAVA_ROOT") or Path(__file__).resolve().parents[4])
 
-TMP = os.path.join(tempfile.gettempdir(), "alea_tmp.txt")
+fd, tmp_name = tempfile.mkstemp(prefix="alea_", suffix=".txt")
+os.close(fd)
+TMP = Path(tmp_name)
+atexit.register(TMP.unlink, missing_ok=True)
 st = Study("cpu")
+
+
+def run_java(*args):
+    """Run a Java dump tool; fail loudly (with its stderr) instead of on a later shape error."""
+    try:
+        return subprocess.run(
+            ["java", *map(str, args)], capture_output=True, text=True, check=True
+        ).stdout
+    except FileNotFoundError:
+        sys.exit("java not found on PATH; install a JDK to run this check")
+    except subprocess.CalledProcessError as exc:
+        sys.exit(f"java {' '.join(map(str, args))} failed ({exc.returncode}):\n{exc.stderr}")
+
+
 res = []
 
 
@@ -49,11 +67,7 @@ x, y, th, dist, lut, can, hd, tps, rvx, rvy, result, rej = d.T
 # --- 1. aim logic vs the robot code (aimAssist + launchLUT) on 4,000 spots
 k = np.arange(4000)
 np.savetxt(TMP, np.c_[x[k], y[k]], fmt="%.9f")
-j = np.loadtxt(
-    subprocess.run(
-        ["java", "-cp", os.path.join(S, "rtout"), "AimDump", TMP], capture_output=True, text=True
-    ).stdout.splitlines()
-)
+j = np.loadtxt(run_java("-cp", S / "rtout", "AimDump", TMP).splitlines())
 dh = np.abs((th[k] - j[:, 0] + np.pi) % (2 * np.pi) - np.pi)
 check(
     "target heading matches aimAssist",
@@ -81,19 +95,7 @@ check(
 fi = np.nonzero(can == 1)[0][:3000]
 np.savetxt(TMP, np.c_[x[fi], y[fi], hd[fi], tps[fi], rvx[fi], rvy[fi]], fmt="%.9f")
 jr = np.array(
-    subprocess.run(
-        [
-            "java",
-            "-cp",
-            os.path.join(S, "bb", "out"),
-            "ShotDump",
-            str(cond["ball_in"]),
-            str(cond["bounce"]),
-            TMP,
-        ],
-        capture_output=True,
-        text=True,
-    ).stdout.split(),
+    run_java("-cp", S / "bb" / "out", "ShotDump", cond["ball_in"], cond["bounce"], TMP).split(),
     dtype=int,
 )
 agree = (jr == result[fi]).mean()
@@ -163,5 +165,4 @@ check(
     (t == T).all() and (f == F).all() and (h == H).all(),
     f"{t.sum():,} tries, {f.sum():,} fired, {h.sum():,} scored",
 )
-os.remove(TMP)
 print("\nALL PASS" if all(res) else f"\n{res.count(False)} FAILED")

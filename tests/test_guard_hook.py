@@ -1,7 +1,5 @@
 """The Claude Code guard hooks: frozen physics files (all agents) and the coordinate-only lead."""
 
-from __future__ import annotations
-
 import json
 import os
 import subprocess
@@ -70,6 +68,16 @@ def test_physics_file_tools(tool: str, path: str, expected: int) -> None:
         (f"cp /tmp/x ./alea/sim/../sim/{SHOTSIM.rsplit('/', 1)[1]}", 2),
         (f"rm -f '/repo/{STUDY}'", 2),
         (f"cat a | tee {SHOTSIM}", 2),
+        # interpreters, perl -i and git checkout/restore (audit 2026-11-07)
+        (f"python -c \"open('{STUDY}','w')\"", 2),
+        (f"uv run python3 -c \"open('{SHOTSIM}','w').write('')\"", 2),
+        (f"git checkout HEAD~3 -- {STUDY}", 2),
+        (f"git restore --source HEAD~1 {SHOTSIM}", 2),
+        (f"perl -pi -e s/a/b/ {SHOTSIM}", 2),
+        (f"/usr/bin/python3.12 tools/x.py {STUDY}", 2),
+        ('python -c "from alea.sim import study"', 0),
+        ("git checkout -b feature/x", 0),
+        ("uv run python -m alea.sim.run_study --shots 10", 0),
     ],
 )
 def test_physics_bash(command: str, expected: int) -> None:
@@ -82,11 +90,12 @@ def test_physics_bypass_env() -> None:
     assert run_hook(PHYSICS, payload, {"ALEA_ALLOW_PHYSICS_EDIT": "1"}) == 0
 
 
-def test_physics_bad_json_is_ignored() -> None:
+@pytest.mark.parametrize("bad_input", ["not json", "", "[1, 2]"])
+def test_physics_bad_json_fails_closed(bad_input: str) -> None:
     proc = subprocess.run(
-        [sys.executable, str(PHYSICS)], input="not json", capture_output=True, text=True
+        [sys.executable, str(PHYSICS)], input=bad_input, capture_output=True, text=True
     )
-    assert proc.returncode == 0
+    assert proc.returncode == 2
 
 
 # --- guard_lead.py ----------------------------------------------------------------------
@@ -155,6 +164,8 @@ def test_lead_file_tools_blocked(tool: str) -> None:
         "gh api repos/o/r/pulls",
         "gh api -X GET repos/o/r/pulls",
         "uv run ruff format --check .",
+        "cat .env.example",
+        "grep -rn keyboard alea",
     ],
 )
 def test_lead_bash_allowed(command: str) -> None:
@@ -219,6 +230,13 @@ def test_lead_bash_allowed(command: str) -> None:
         "echo `rm x`",
         "cat a; mv a b",
         "cat a & rm b",
+        # secret files (audit 2026-11-07)
+        "cat .env",
+        "cat ./.env.local",
+        "head -5 /repo/.env",
+        "grep KEY .env.production",
+        "cat certs/server.pem",
+        "tail id.key",
     ],
 )
 def test_lead_bash_blocked(command: str) -> None:
@@ -238,8 +256,9 @@ def test_lead_hook_ignores_sessions_without_agent() -> None:
     assert run_hook(LEAD, payload) == 0
 
 
-def test_lead_bad_json_is_ignored() -> None:
+@pytest.mark.parametrize("bad_input", ["not json", "", "[1, 2]"])
+def test_lead_bad_json_fails_closed(bad_input: str) -> None:
     proc = subprocess.run(
-        [sys.executable, str(LEAD)], input="not json", capture_output=True, text=True
+        [sys.executable, str(LEAD)], input=bad_input, capture_output=True, text=True
     )
-    assert proc.returncode == 0
+    assert proc.returncode == 2

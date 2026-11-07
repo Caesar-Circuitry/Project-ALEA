@@ -1,7 +1,5 @@
 """Remove finished agent worktrees under .claude/worktrees/ and their leftover branches."""
 
-from __future__ import annotations
-
 import subprocess
 from pathlib import Path
 

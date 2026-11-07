@@ -41,5 +41,42 @@
   "LAUNCH_PITCH_RAD": 1.260127719939906,
   "LAUNCH_EXIT_X_IN": -6.1,
   "LAUNCH_EXIT_Z_IN": 8.5,
-  "TICKS_TO_IN_S": 0.19085175370557994
+  "TICKS_TO_IN_S": 0.19085175370557994,
+  "HIVE_AUDIENCE_MOUTH_Y_IN": 54.47,
+  "HIVE_REAR_MOUTH_Y_IN": 87.03,
+  "AIM_MAX_OFF_AXIS_DEG": 80.0,
+  "LUT_DISTANCE_IN": [
+    24,
+    28,
+    32,
+    36,
+    40,
+    44,
+    48,
+    52,
+    56,
+    60,
+    64,
+    68,
+    72,
+    76,
+    80
+  ],
+  "LUT_TICKS_PER_SEC": [
+    1180,
+    1110,
+    1100,
+    1100,
+    1120,
+    1140,
+    1160,
+    1180,
+    1200,
+    1230,
+    1260,
+    1290,
+    1310,
+    1340,
+    1360
+  ]
 }

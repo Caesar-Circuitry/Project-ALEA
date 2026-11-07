@@ -27,7 +27,7 @@ for i in range(len(xs)):
         w = tps[r[i]]
         mine[(xs[i], ys[i])] = (r[i].sum(), w.min(), w.max())
 ref = {}
-for line in open(Path(__file__).with_name("java_ref.txt")):
+for line in Path(__file__).with_name("java_ref.txt").read_text(encoding="utf-8").splitlines():
     p = line.split()
     ref[(int(p[0]), int(p[1]))] = (int(p[5]), *map(float, p[7].split("..")))
 keys = sorted(set(ref) | set(mine))

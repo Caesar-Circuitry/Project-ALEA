@@ -67,7 +67,7 @@ def heatmap(z, title, fn):
 
 def main(out: str | Path = "results/study"):
     out = Path(out)
-    with open(out / "summary.csv", newline="") as fh:
+    with (out / "summary.csv").open(newline="", encoding="utf-8") as fh:
         rows = [{k: float(v) for k, v in r.items()} for r in csv.DictReader(fh)]
 
     def name(r):

@@ -1,7 +1,5 @@
 """Pure parsing helpers of the worktree-prune tool."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 from alea.tools.worktree_prune import is_under, parse_branches, parse_worktrees, stale_branches

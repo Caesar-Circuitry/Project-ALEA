@@ -1,7 +1,5 @@
 """Pure helpers of the SessionStart hook, run against a tmp project dir."""
 
-from __future__ import annotations
-
 import importlib.util
 import os
 import subprocess

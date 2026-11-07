@@ -112,7 +112,7 @@ GitHub goes through `gh` (cheaper in context), and nothing else external is in s
 
 - One worktree per concurrent implementer; one branch, one PR each. Never two agents editing
   `alea/game/` or `conf/` at once.
-- Studies write under Hydra `outputs/` (git-ignored), never into `tests/golden/`.
+- Studies write under `results/` (git-ignored; the `out:` key in `conf/study/brev72.yaml`), never into `tests/golden/`.
 - Children report to the lead; they do not message each other.
 - For work bigger than a handful of agents (the dsim hive-tipping port with parallel
   validation), the options in order of cost: an `orchestrator` run (Fable, asks first), or a
