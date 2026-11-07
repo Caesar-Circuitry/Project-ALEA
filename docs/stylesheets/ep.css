@@ -118,3 +118,104 @@
 
 /* Header logo: the hex badge, square, slightly larger than Material's default */
 .md-header__button.md-logo img { height: 2rem; width: auto; }
+
+/* =====================================================================
+   Website layer: web-style blocks that reuse the EP palette but not its
+   print layouts (hero, link cards, timeline, decision cards).
+   ===================================================================== */
+:root {
+  /* Our own hexagon outline tile, drawn for this site. */
+  --ep-hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34.64' height='60' viewBox='0 0 34.64 60'%3E%3Cpath d='M17.32 0L34.64 10V30L17.32 40L0 30V10Z M17.32 40V60' fill='none' stroke='white' stroke-opacity='.11'/%3E%3C/svg%3E");
+}
+.md-header { background-image: var(--ep-hex); }
+
+/* Softer corners on the shared blocks so the page reads as a website, not a print sheet */
+.md-typeset h2 { border-radius: 6px; }
+.md-typeset .ep-card { border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, .14); }
+.md-typeset .ep-stat { border-radius: 10px; }
+.md-typeset .ep-risk { border-radius: 0 0 10px 10px; }
+.md-typeset h2.ep-black { border-radius: 10px 10px 0 0; }
+
+/* Open section heading: big display font and a short red rule, no grey bar */
+.md-typeset h2.ep-h {
+  background: none; color: inherit; text-align: left; border-radius: 0;
+  font-family: "Teko", sans-serif; font-size: 2.1rem; font-weight: 600; line-height: 1;
+  text-transform: uppercase; padding: 0 0 .7rem; margin: 2.4rem 0 1rem; position: relative;
+}
+.md-typeset h2.ep-h::after {
+  content: ""; position: absolute; left: 0; bottom: 0; width: 3.2rem; height: 4px;
+  background: var(--ep-gradient); border-radius: 2px;
+}
+
+/* Hero */
+.md-typeset .ep-hero {
+  position: relative; overflow: hidden; border-radius: 14px; color: #fff; margin: 0 0 1.6rem;
+  padding: 2.6rem 2.2rem; display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: center;
+  background-color: #000;
+  background-image: radial-gradient(700px 320px at 88% 25%, rgba(229, 43, 43, .38), transparent 62%), var(--ep-hex);
+}
+.md-typeset .ep-hero h1 {
+  display: block; background: none; padding: 0; margin: .2rem 0 .8rem;
+  font-size: clamp(2.6rem, 5vw, 3.6rem); color: #D01A3A; white-space: nowrap;
+  text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+}
+.md-typeset .ep-hero p { color: #e9e9e9; font-size: .95rem; line-height: 1.55; max-width: 34rem; margin: 0 0 1.1rem; }
+.md-typeset .ep-hero img { height: 190px; width: auto; border-radius: 18px; filter: drop-shadow(0 6px 22px rgba(229, 43, 43, .45)); }
+.md-typeset .ep-eyebrow {
+  font-family: "Teko", sans-serif; letter-spacing: .12em; text-transform: uppercase; font-size: 1.05rem;
+  color: var(--ep-red-bright); margin: 0;
+}
+@media (max-width: 760px) {
+  .md-typeset .ep-hero { grid-template-columns: 1fr; padding: 1.6rem 1.2rem; }
+  .md-typeset .ep-hero img { height: 110px; justify-self: start; order: -1; }
+}
+
+/* Buttons (a markdown link with { .ep-btn }) */
+.md-typeset a.ep-btn {
+  display: inline-block; margin: 0 .5rem .5rem 0; padding: .5rem 1rem; border-radius: 999px;
+  background: var(--ep-gradient); color: #fff; font-weight: 700; font-size: .85rem; text-decoration: none;
+  transition: transform .15s, box-shadow .15s;
+}
+.md-typeset a.ep-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(229, 43, 43, .4); color: #fff; }
+.md-typeset a.ep-btn.ep-ghost { background: transparent; border: 2px solid rgba(255, 255, 255, .75); padding: calc(.5rem - 2px) 1rem; }
+
+/* Link cards (a markdown link with { .ep-tile }) */
+.md-typeset .ep-cards > p { display: contents; }
+.md-typeset .ep-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin: 1rem 0 1.4rem; }
+.md-typeset a.ep-tile {
+  display: block; background: var(--ep-panel); border-radius: 10px; border-top: 4px solid var(--ep-red);
+  padding: .9rem 1.1rem 1rem; color: inherit; text-decoration: none; font-size: .82rem; line-height: 1.45;
+  transition: transform .15s, box-shadow .15s;
+}
+.md-typeset a.ep-tile:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0, 0, 0, .2); }
+.md-typeset a.ep-tile b {
+  display: block; font-family: "Teko", sans-serif; font-size: 1.5rem; line-height: 1.1; font-weight: 600;
+  text-transform: uppercase; color: var(--ep-red);
+}
+.md-typeset a.ep-tile b::after { content: " \2192"; opacity: .55; }
+.md-typeset a.ep-tile:hover b::after { opacity: 1; }
+
+/* Vertical timeline */
+.md-typeset ol.ep-timeline { list-style: none; margin: 1.2rem 0 1.4rem .5rem; padding: 0 0 0 1.7rem; border-left: 3px solid var(--ep-red); }
+.md-typeset ol.ep-timeline li { position: relative; margin: 0 0 .8rem; padding: .65rem 1rem; background: var(--ep-panel); border-radius: 8px; font-size: .84rem; line-height: 1.45; }
+.md-typeset ol.ep-timeline li::before {
+  content: ""; position: absolute; left: -2.35rem; top: .95rem; width: .85rem; height: .85rem; border-radius: 50%;
+  background: var(--ep-red); border: 3px solid var(--md-default-bg-color); box-sizing: content-box;
+}
+.md-typeset ol.ep-timeline b { display: block; font-family: "Teko", sans-serif; font-size: 1.25rem; line-height: 1.15; font-weight: 600; text-transform: uppercase; color: var(--ep-red); }
+.md-typeset ol.ep-timeline code { font-size: .72rem; }
+
+/* Finding -> decision cards */
+.md-typeset .ep-decisions { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin: 1rem 0 1.4rem; }
+.md-typeset .ep-decision { border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, .14); display: flex; flex-direction: column; }
+.md-typeset .ep-decision .ep-finding { background: var(--ep-panel); padding: .8rem 1rem; font-size: .8rem; line-height: 1.45; flex: 1; }
+.md-typeset .ep-decision .ep-do { background: var(--ep-gradient); color: #fff; padding: .6rem 1rem; font-weight: 700; font-size: .82rem; line-height: 1.35; }
+.md-typeset .ep-decision .ep-do::before { content: "\2192  "; }
+
+@media (prefers-reduced-motion: reduce) {
+  .md-typeset a.ep-btn, .md-typeset a.ep-tile { transition: none; }
+  .md-typeset a.ep-btn:hover, .md-typeset a.ep-tile:hover { transform: none; }
+}
+[data-md-color-scheme="slate"] .md-typeset ol.ep-timeline b,
+[data-md-color-scheme="slate"] .md-typeset a.ep-tile b { color: #FF5A5F; }
+.md-typeset .ep-decision .ep-do p, .md-typeset .ep-decision .ep-finding p { margin: 0; display: inline; }

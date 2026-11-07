@@ -64,6 +64,18 @@ Flywheel error matters too: **PIDF must hold within 2%**. Our **1° aim toleranc
 </div>
 </div>
 
+## What ALEA Changed {.ep-h}
+
+<div class="ep-decisions" markdown>
+<div class="ep-decision" markdown><div class="ep-finding" markdown>Moving at 10 in/s cuts scoring nearly in half (**87.6% → 48.1%**).</div><div class="ep-do" markdown>Drivers stop before every launch.</div></div>
+<div class="ep-decision" markdown><div class="ep-finding" markdown>**3% flywheel error** costs about 10 points.</div><div class="ep-do" markdown>PIDF must hold within 2%.</div></div>
+<div class="ep-decision" markdown><div class="ep-finding" markdown>**0.5° aim** is under 1 point better than 1°.</div><div class="ep-do" markdown>Keep the faster 1° aim tolerance.</div></div>
+<div class="ep-decision" markdown><div class="ep-finding" markdown>Ball size and bounce change results by **under 1 point**.</div><div class="ep-do" markdown>No special handling for worn balls.</div></div>
+<div class="ep-decision" markdown><div class="ep-finding" markdown>**97.5%** of shots score from the auto start pose.</div><div class="ep-do" markdown>Keep the auto start pose.</div></div>
+<div class="ep-decision" markdown><div class="ep-finding" markdown>A 36° hood scores from **3 of 1,610** spots; 72.2° from **1,000 (62%)**.</div><div class="ep-do" markdown>Keep the curved hood.</div></div>
+<div class="ep-decision" markdown><div class="ep-finding" markdown>The robot fires from **2 strips** near the hive's front corners where every shot misses (7% of fired shots).</div><div class="ep-do" markdown>Tighten the aim limit near the hive (projected 88% → 94%).</div></div>
+</div>
+
 ## Risk Mitigation & Lessons Learned {.ep-black}
 
 <div class="ep-risk" markdown>
