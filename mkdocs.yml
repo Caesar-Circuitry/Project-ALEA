@@ -17,4 +17,5 @@ nav:
       - 0002 Robot contract: decisions/0002-robot-contract.md
       - 0003 Agentic workflow: decisions/0003-agentic-workflow-and-models.md
       - 0004 Branch protection: decisions/0004-branch-protection.md
+      - 0005 Hifi dsim port: decisions/0005-hifi-dsim-port.md
       - 0006 Agent sandbox: decisions/0006-agent-sandbox.md

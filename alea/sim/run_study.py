@@ -22,6 +22,7 @@ import numpy as np
 import warp as wp
 import yaml
 
+from alea.hifi import FIDELITY_CHOICES, check_fidelity
 from alea.sim import plots, selftest
 from alea.sim.conditions import all_conditions
 from alea.sim.study import Study
@@ -40,6 +41,9 @@ def parse_args(argv=None):
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--out", default=None, help="output directory")
     ap.add_argument("--device", default=None, help="cuda / cuda:0 / cpu (default: GPU if any)")
+    ap.add_argument(
+        "--fidelity", default=None, choices=FIDELITY_CHOICES, help="fast (default) or hifi"
+    )
     ap.add_argument("--skip-selftest", action="store_true")
     ap.add_argument("--plan", action="store_true", help="print the plan and estimate only")
     return ap.parse_args(argv)
@@ -49,6 +53,7 @@ def main(argv=None):
     a = parse_args(argv)
     with Path(a.config).open(encoding="utf-8") as fh:
         cfg = yaml.safe_load(fh) or {}
+    check_fidelity(a.fidelity if a.fidelity is not None else cfg.get("fidelity", "fast"))
     shots = int(a.shots if a.shots is not None else cfg.get("shots", 1e6))
     batch = int(a.batch if a.batch is not None else cfg.get("batch", 1e6))
     seed = int(a.seed if a.seed is not None else cfg.get("seed", 24331))
