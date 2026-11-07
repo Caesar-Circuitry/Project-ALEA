@@ -2,7 +2,31 @@
 
 Pinned dsim commit: `62d2446e2ebdf416548fa1641847289bf47cdf36` (default branch `main`, committed
 2026-11-02; github.com/genius0412/dsim, PolyForm Noncommercial 1.0.0, copy in `LICENSE-dsim`).
-Plan and licensing: `docs/decisions/0005-hifi-dsim-port.md`. Nothing here is ported yet.
+Plan and licensing: `docs/decisions/0005-hifi-dsim-port.md`. Ported so far (phase 1b): the pure hive logic only (below). Not ported: the 3D hive, contacts,
+nectar box, and any use of the port by the study kernel; `check_fidelity('hifi')` still raises.
+
+## Ported (branch feature/1b-hive-logic)
+
+| Python | From dsim | Notes |
+|---|---|---|
+| `hive.py` | all of `src/games/biobuzz/hive.ts`: `otherSide`, `hivePivot`, `hiveCellPos`, `hiveApproachSign`, `hiveTakingSide`, `hiveAccepts`, `hiveLoad`, `hiveWillTip`, `hiveSurplus`, `hiveSwingRate`, `hiveTimerStep`, `hiveStep`, `spillPoses`, `hiveDeflect` and the types | snake_case functions; immutable dataclasses; `swingRate` is `swing_rate` (None = undefined); `contents` is a tuple; `rng` and `kind_of` are caller-supplied callables |
+| `hive_constants.py` | the config.ts hive block, the fieldDims.gen.ts `HIVE` block and hive.ts' own constants | dsim's numbers, NOT alea/game's; each labelled with its dsim file:line |
+| `hive_math.py` | `dsin`, `dcos` from `src/math.ts` | ported because they are short and exact; `math.sin/cos` differ from them by up to 6.0e-12 |
+
+Validation: every fixture in `tests/hifi_traces/` is replayed by `tests/test_hifi_hive_*.py`
+(helpers in `tests/hifi_replay.py`). Measured max deviation is exactly 0 (bit-identical) for
+all floats in capture, load, sides, the three timer files, spill, deflect and trig, so the
+tests demand equality. The spill replay also checks the RNG draw count (6 per pose) with a
+test-side mulberry32 and a cycled-values RNG.
+
+Deliberate non-matches with dsim: none in behaviour. `Math.round` and `Math.sign` are
+reimplemented with JavaScript semantics (Python's `round` is banker's). Launch times in the
+timer replay use the same JS rounding. In `hive_step`, as in dsim, `contents` is the caller's;
+timer traces never clear it (see `tests/hifi_traces/README.md`).
+
+Not yet decided: nothing from `alea/game/` is used by this code. The differences listed below
+are still the user's to resolve before the port feeds any study.
+
 
 ## What to port, in order
 
