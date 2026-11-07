@@ -26,7 +26,7 @@ from alea.sim import plots, selftest
 from alea.sim.conditions import all_conditions
 from alea.sim.study import Study
 
-wp.config.quiet = True
+wp.config.quiet = True  # pyright: ignore[reportAttributeAccessIssue]
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = REPO_ROOT / "conf" / "study" / "brev72.yaml"
@@ -93,7 +93,7 @@ def main(argv=None):
                 print(f"[{i + 1}/{len(conds)}] already done, skipping")
                 continue
         t0 = time.time()
-        tries, fired, hits = st.run(c, shots, seed=seed + 1000 * c["id"], batch=batch)
+        tries, fired, hits = st.run(c, shots, seed=seed + 1000 * c["id"], batch=batch)  # pyright: ignore[reportAssignmentType]
         np.savez_compressed(fn, tries=tries, fired=fired, hits=hits, shots=shots, seed=seed, **c)
         p = hits.sum() / max(fired.sum(), 1)
         print(

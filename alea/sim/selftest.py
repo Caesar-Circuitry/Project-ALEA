@@ -15,7 +15,7 @@ from alea.sim.conditions import all_conditions
 from alea.sim.shotsim import ShotSim
 from alea.sim.study import Study
 
-wp.config.quiet = True
+wp.config.quiet = True  # pyright: ignore[reportAttributeAccessIssue]
 
 GOLDEN = Path(__file__).resolve().parents[2] / "tests" / "golden" / "golden_shots.npy"
 
@@ -35,7 +35,7 @@ def main(device=None):
 
     st = Study(sim.device)
     c = all_conditions()[0]
-    t, f, h, dbg = st.run(c, 20000, seed=1, batch=7000, debug=True)
+    t, f, h, dbg = st.run(c, 20000, seed=1, batch=7000, debug=True)  # pyright: ignore[reportAssignmentType]
     fired = dbg[:, 5] == 1
     rep = sim.run(
         dbg[fired, 0],
@@ -53,7 +53,7 @@ def main(device=None):
     counts = (t.sum() == 20000, f.sum() == fired.sum(), h.sum() == (dbg[:, 10] == 1).sum())
     print(f"[3] heat-map counts add up (tries, fired, hits): {counts}")
     ok &= all(counts)
-    t2, f2, h2 = st.run(c, 20000, seed=1, batch=20000)
+    t2, f2, h2 = st.run(c, 20000, seed=1, batch=20000)  # pyright: ignore[reportAssignmentType]
     rep_ok = (t2 == t).all() and (f2 == f).all() and (h2 == h).all()
     print(f"[4] same seed gives the same answer (batch size changed too): {rep_ok}")
     ok &= bool(rep_ok)

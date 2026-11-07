@@ -26,7 +26,7 @@ def heatmap(z, title, fn):
     rate = np.where(F >= MIN_FIRED, H / np.maximum(F, 1), np.nan)
     hold = (T > 0) & (F == 0)
     fig, ax = plt.subplots(figsize=(9, 5.2), dpi=150)
-    ext = [0, rate.shape[0] * CELL, 0, rate.shape[1] * CELL]
+    ext = (0, rate.shape[0] * CELL, 0, rate.shape[1] * CELL)
     ax.imshow(
         np.where(hold, 1, np.nan).T,
         origin="lower",
@@ -65,13 +65,10 @@ def heatmap(z, title, fn):
     plt.close(fig)
 
 
-def main(out="results/study"):
+def main(out: str | Path = "results/study"):
     out = Path(out)
     with open(out / "summary.csv", newline="") as fh:
-        rows = list(csv.DictReader(fh))
-    for r in rows:
-        for k in r:
-            r[k] = float(r[k])
+        rows = [{k: float(v) for k, v in r.items()} for r in csv.DictReader(fh)]
 
     def name(r):
         return (
@@ -97,7 +94,7 @@ def main(out="results/study"):
     fig, axs = plt.subplots(1, len(groups), figsize=(14, 3.6), dpi=150, sharey=True)
     for ax, (label, key, vals) in zip(axs, groups, strict=True):
         vals = sorted(vals)
-        m = [np.mean([r["pct_scored_of_fired"] for r in rows if r[key] == v]) for v in vals]
+        m = [float(np.mean([r["pct_scored_of_fired"] for r in rows if r[key] == v])) for v in vals]
         ax.bar([f"{v:g}" for v in vals], m, color="#b3161b")
         for i, v in enumerate(m):
             ax.text(i, v + 1, f"{v:.0f}%", ha="center", fontsize=9)
