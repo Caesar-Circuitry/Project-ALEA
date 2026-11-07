@@ -24,10 +24,12 @@ and commits happen there, push and `gh` happen on the host. Stop at the first fa
 3. Verify what the container did: `git status` and `git log main..HEAD --stat`. Nothing should
    be changed that the task did not ask for (no stray files, no edits to frozen physics files).
 4. Check for an existing PR: `gh pr list --head <branch>`.
-   - Exists: run `git push -u origin <branch>` (asks the user), say that the PR already exists
+   - Exists: run `git push origin <branch>` (asks the user), say that the PR already exists
      and give its URL. Do not create another. Go to step 7.
    - None: continue.
-5. On the host, `git push -u origin <branch>`. This asks the user; that is expected.
+5. On the host, `git push origin <branch>`, with no `-u`: `-u` writes tracking into `.git/config`,
+   which makes the container's read-only overlay go stale and `just dev` refuse to run. This asks
+   the user; that is expected.
 6. Write the PR body to a file in the session scratchpad directory (the path the harness gives,
    not `/tmp`), so no shell quoting is involved. It follows `.github/pull_request_template.md`:
    What and why, Checks, How it was tested (paste the real command output), anything skipped and

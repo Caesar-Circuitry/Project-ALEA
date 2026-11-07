@@ -54,7 +54,8 @@ starting a PR.
 - Small commits on a `setup/…` or `feature/…` branch, merged by pull request via `/pr`.
   Never commit to `main`.
 - The lead runs `just dev-up` before it delegates. `git push` and `gh` run on the host only (the lead, after the user approves).
-  New branches: `git switch -c <name> --no-track origin/main`.
+  New branches: `git switch -c <name> --no-track origin/main`. Push with `git push origin <branch>`,
+  never `-u` (it rewrites `.git/config` and breaks the container's overlay).
 - If Remote Control is connected, send a `PushNotification` to the user's phone when a PR is
   ready (branch pushed, compare link printed) and when you are blocked on the user's input or a
   permission (push approval, a question, a denied action). One short line that leads with what to

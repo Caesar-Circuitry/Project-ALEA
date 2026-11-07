@@ -99,10 +99,10 @@ dev-status:
     docker ps -a --filter name=^alea-dev$ --format "alea-dev: {{"{{"}}.Status{{"}}"}}"
 
 # File overlays (.git/config, .env) are dropped silently when the host rewrites the file (git on
-# the host replaces .git/config on many commands). Refuse to run until `dev-down` + `dev-up`.
+# the host replaces .git/config on many commands, notably `git push -u`; push without -u). Refuse to run until `dev-down` + `dev-up`.
 [unix]
 _dev-check:
-    @docker exec -w "{{dev_root}}" alea-dev sh -c 'for f in .git/config .env; do if [ -e "$f" ] && ! grep -q "/$f " /proc/self/mountinfo; then echo "read-only overlay on $f is gone (the host rewrote it): ask the user to run just dev-down and just dev-up" >&2; exit 1; fi; done'
+    @docker exec -w "{{dev_root}}" alea-dev sh -c 'for f in .git/config .env; do if [ -e "$f" ] && ! grep -q "/$f " /proc/self/mountinfo; then echo "read-only overlay on $f is gone (the host rewrote it, e.g. git push -u): ask the user to run just dev-down and just dev-up" >&2; exit 1; fi; done'
 
 # Run a command in the container, in the same folder as here: `just dev uv run pytest -q`.
 # Compound commands go inside it: `just dev bash -c 'ls && pwd'`.

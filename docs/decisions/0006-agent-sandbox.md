@@ -85,6 +85,10 @@ Weaknesses, stated plainly:
 - **Branch creation needs `--no-track`.** `git switch -c x origin/main` prints a config write
   error, because it writes tracking to the read-only `.git/config`. Agents must use
   `git switch -c <name> --no-track origin/main`.
+- **Host `git push -u` also breaks the overlay.** It adds `branch.<name>.remote` and `.merge` to
+  `.git/config`, and git replaces that file, so the container's bind mount keeps the old one and
+  `just dev` refuses to run until `just dev-down` and `just dev-up`. Push with
+  `git push origin <branch>` and no `-u`; `gh pr create --head <branch>` does not need tracking.
 - **Windows is not supported.** `just dev` stops with an error that points to WSL2.
 - **Two mount lists must match.** `justfile` (`dev-start`) is what `just dev-up` runs.
   `.devcontainer/cpu/devcontainer.json` is for editors. It has no `.env` mask and no

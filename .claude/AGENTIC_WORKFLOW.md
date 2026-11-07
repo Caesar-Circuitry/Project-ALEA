@@ -36,6 +36,7 @@ Every agent except the lead runs its shell work in the dev container `alea-dev`
   `;` or `|`, use `just dev bash -c '...'`. `guard_container.py` blocks any other shell command.
 - The lead runs `just dev-up` on the host before it delegates. It runs `just dev-status` to check.
 - `git push` and `gh` run on the host only, by the lead after the user approves each. The container has no push credentials.
+- Push with `git push origin <branch>`, never `-u`: it rewrites `.git/config` and the container's overlay goes stale.
 - Create branches with `git switch -c <name> --no-track origin/main`. Tracking writes to the
   read-only `.git/config`.
 - If `just dev` says a read-only overlay is gone, the host rewrote `.git/config` or `.env`. The
