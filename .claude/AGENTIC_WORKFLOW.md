@@ -27,6 +27,21 @@ named agent applies that agent's `tools` list to the main session, so:
 The lead's job each turn: understand, plan (plan mode for multi-file work), spawn, collect,
 verify with `just lint` / `just test` / `just selftest`, report with evidence.
 
+### Shell sandbox
+
+Every agent except the lead runs its shell work in the dev container `alea-dev`
+(`docs/decisions/0006-agent-sandbox.md`).
+
+- Non-lead agents run commands as `just dev <cmd>` or `docker exec alea-dev <cmd>`. For `&&`,
+  `;` or `|`, use `just dev bash -c '...'`. `guard_container.py` blocks any other shell command.
+- The lead runs `just dev-up` on the host before it delegates. It runs `just dev-status` to check.
+- `git push` and `gh` run on the host only, by the user. The container has no push credentials.
+- Create branches with `git switch -c <name> --no-track origin/main`. Tracking writes to the
+  read-only `.git/config`.
+- If `just dev` says a read-only overlay is gone, the host rewrote `.git/config` or `.env`. The
+  user runs `just dev-down` and then `just dev-up`.
+- Edits still use the host's file tools. The hook keeps them inside the repo.
+
 ## 2. Model tiers by problem type
 
 | Tier | Model | Agent | Use for |
@@ -83,6 +98,8 @@ rule or tool list is applied by Claude Code every time. Keep the enforced set sm
 |---|---|---|
 | lead never edits files | `tools` allowlist on the `lead` agent | `.claude/agents/lead.md` |
 | lead's shell is read-only + checks | PreToolUse hook, `agent_type == lead` | `.claude/hooks/guard_lead.py` |
+| other agents' shell runs in `alea-dev`; file edits stay in the repo | PreToolUse hook, every agent but lead | `.claude/hooks/guard_container.py` |
+| no push credentials in the sandbox | no mounts, no credential helper | `.devcontainer/cpu/`, decision 0006 |
 | frozen physics files (real file targets, not command text) | PreToolUse hook, all agents | `.claude/hooks/guard_physics.py` |
 | edited `.py` files get `ruff format` + `ruff check --fix` (never blocks) | PostToolUse hook, `Edit\|Write\|MultiEdit` | `.claude/hooks/autoformat.py` |
 | session summary: branch, `.venv` freshness, golden data, roadmap next, worktrees | SessionStart hook | `.claude/hooks/session_start.py` |
@@ -131,5 +148,5 @@ and `justfile` edits. They cost nothing until needed.
 
 - `/status` shows `@lead` in the startup header and lists `Project settings` under sources.
 - Ask the lead to edit a file: it should spawn `implementer` or say it has no Edit tool.
-- `uv run pytest tests/test_claude_config.py tests/test_guard_hook.py` checks the config shape,
-  the model pins and both guard hooks.
+- `uv run pytest tests/test_claude_config.py tests/test_guard_hook.py tests/test_guard_container.py`
+  checks the config shape, the model pins and the guard hooks.

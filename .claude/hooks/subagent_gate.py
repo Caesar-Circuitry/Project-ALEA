@@ -14,11 +14,33 @@ import tempfile
 from pathlib import Path
 
 MAX_BLOCKS = 3
+CONTAINER = "alea-dev"
 CHECKS = [
     ["uv", "run", "ruff", "check", "."],
     ["uv", "run", "ruff", "format", "--check", "."],
     ["uv", "run", "pytest", "-q", "-x", "-m", "not gpu and not slow"],
 ]
+
+
+def container_prefix(cwd: Path) -> list[str]:
+    """`docker exec` prefix when the dev container is running and cwd is inside the project.
+
+    Empty when Docker or the container is unavailable: the checks then run on the host.
+    """
+    root = Path(os.environ.get("CLAUDE_PROJECT_DIR") or cwd)
+    try:
+        cwd.resolve().relative_to(root.resolve())  # the repo is mounted at its host path
+        proc = subprocess.run(
+            ["docker", "ps", "-q", "--filter", f"name=^{CONTAINER}$"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+    except Exception:
+        return []
+    if proc.returncode != 0 or not proc.stdout.strip():
+        return []
+    return ["docker", "exec", "-w", cwd.resolve().as_posix(), CONTAINER]
 
 
 def main() -> int:
@@ -39,14 +61,15 @@ def main() -> int:
         blocks = 0
     if blocks >= MAX_BLOCKS:
         return 0
+    prefix = container_prefix(cwd)  # run in the sandbox when it is up, else on the host
     subprocess.run(
-        ["uv", "sync", "--all-extras", "--no-extra", "gpu", "--group", "dev", "-q"],
+        [*prefix, "uv", "sync", "--all-extras", "--no-extra", "gpu", "--group", "dev", "-q"],
         cwd=cwd,
         capture_output=True,
         text=True,
     )
     for check in CHECKS:
-        proc = subprocess.run(check, cwd=cwd, capture_output=True, text=True)
+        proc = subprocess.run([*prefix, *check], cwd=cwd, capture_output=True, text=True)
         if proc.returncode != 0:
             try:
                 counter.parent.mkdir(parents=True, exist_ok=True)
@@ -56,7 +79,8 @@ def main() -> int:
             tail = (proc.stdout + proc.stderr)[-4000:]
             sys.stderr.write(
                 f"Not done yet: `{' '.join(check)}` failed (block {blocks + 1}/{MAX_BLOCKS}). "
-                "Fix it, re-run `just lint` and `just test`, then finish.\n" + tail
+                f"{'(in the dev container) ' if prefix else ''}Fix it, re-run `just lint` and "
+                "`just test`, then finish.\n" + tail
             )
             return 2
     return 0
