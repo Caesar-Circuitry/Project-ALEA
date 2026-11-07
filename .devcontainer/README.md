@@ -166,8 +166,11 @@ just dev-up
 **`git push` fails inside the container.** This is by design. Push from the host:
 
 ```
-git push -u origin feature/my-branch
+git push origin feature/my-branch
 ```
+
+Leave out `-u`. It writes tracking into `.git/config`, which breaks the container's read-only
+overlay on that file (see the next item).
 
 **`git switch -c x origin/main` prints a config write error.** Add `--no-track`. See above.
 
