@@ -57,6 +57,10 @@ required-environments = [
 [tool.hatch.build.targets.wheel]
 packages = ["alea"]
 
+[tool.jupytext]
+# notebooks/*.py (percent format) is the committed source; the .ipynb is regenerated
+formats = "ipynb,py:percent"
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
