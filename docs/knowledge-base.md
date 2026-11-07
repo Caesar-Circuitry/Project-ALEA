@@ -2,7 +2,7 @@
 
 Team 24331 Caesar Circuitry · FTC season BIOBUZZ (2026–27) · last updated 2026-11-06
 
-This is the master reference for Project ALEA. Other files in this Project: the code (`code/`), the results data (`summary.csv`), the judge binder (`ALEA_Technical_Binder.md`), and EP page text (`EP_Page13_Text.md`).
+This is the master reference for Project ALEA. The code is in `alea/`, and the judge-facing write-up is the [technical binder](technical-binder.md).
 
 ---
 
@@ -239,24 +239,7 @@ Edit `conditions.py` to change the study. Results: `summary.csv`, `heatmap_norma
 
 ---
 
-## 11. Presentation material
-
-**Think overview bullet:** Project ALEA: **Monte Carlo analysis** of **72 million shots**
-
-**EP table cell:** Monte Carlo: 72M shots on GPU
-
-**20-second Think script:**
-> Every minute on the robot counts, so we test our ideas in simulation first. Our Monte Carlo engine, Project ALEA, simulates seventy-two million launches, each one a little off, like a real robot, and counts what scores. That data made our decisions: we kept our curved hood, and our drivers stop before every launch. And we never trust it until real match videos agree.
-
-Follow-ups: "How long?" → 72 seconds on a cloud GPU. "How do you know it's right?" → validated against FIRST's CAD and match videos; the first version said we couldn't score, which is how we found the hood was modeled wrong.
-
-**Mentor line (Connect):** Taught us industry simulation methods we used across our simulators.
-
-**Style rules for EP pages:** use only existing brand elements (black header bar, red gradient "Problem:" banner, grey section bars #4a4a4a, light grey boxes #e6e6e6, red table headers #b50d0d, red serif math #b3161b, black Risk Mitigation bar over red gradient box, Open Sans). No watermarks. No criterion badges.
-
----
-
-## 12. Glossary
+## 11. Glossary
 
 | Term | Meaning |
 | --- | --- |
