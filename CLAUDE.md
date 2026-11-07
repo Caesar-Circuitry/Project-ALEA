@@ -20,6 +20,7 @@ subagents, each pinned to a model:
 | review anything under `alea/sim`, `alea/game`, `alea/hifi`, `tests/golden` | `physics-reviewer` | Opus |
 | check a finished branch before /pr | `verifier` | Sonnet |
 | diagnose a CI failure | `ci-diagnoser` | Opus |
+| periodic audit of practices, security, AI mistakes | `auditor` | Opus |
 | coordinate a multi-agent, multi-PR job | `orchestrator` | Fable, asks the user first |
 
 All Sonnet and Haiku work can consult Opus through the built-in advisor (`advisorModel: opus` in `.claude/settings.json`).

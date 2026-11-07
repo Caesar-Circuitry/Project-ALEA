@@ -111,6 +111,7 @@ def test_lead_is_coordinate_only() -> None:
         "verifier",
         "ci-diagnoser",
         "docs-writer",
+        "auditor",
         "orchestrator",
     }
     assert lead["_body"] == "", "a non-empty body would replace Claude Code's system prompt"
@@ -126,6 +127,7 @@ def test_agent_models_are_pinned() -> None:
         "verifier",
         "ci-diagnoser",
         "docs-writer",
+        "auditor",
         "orchestrator",
     }
     for name, fields in defs.items():
@@ -136,12 +138,13 @@ def test_agent_models_are_pinned() -> None:
     assert defs["physics-reviewer"]["model"] == "opus"
     assert defs["verifier"]["model"] == "sonnet"
     assert defs["ci-diagnoser"]["model"] == "opus"
+    assert defs["auditor"]["model"] == "opus"
     assert [n for n, f in defs.items() if f["model"] == "fable"] == ["orchestrator"]
 
 
 def test_read_only_agents_have_no_write_tools() -> None:
     defs = agents()
-    for name in ("explorer", "physics-reviewer", "verifier", "ci-diagnoser"):
+    for name in ("explorer", "physics-reviewer", "verifier", "ci-diagnoser", "auditor"):
         tools = defs[name]["tools"]
         assert "Edit" not in tools and "Write" not in tools, name
 
@@ -154,6 +157,14 @@ def test_implementer_has_stop_gate() -> None:
 
 def test_skills_are_user_invoked_only() -> None:
     skills = list((CLAUDE / "skills").glob("*/SKILL.md"))
-    assert {s.parent.name for s in skills} == {"pr", "physics-change", "start-pr"}
+    assert {s.parent.name for s in skills} == {"pr", "physics-change", "start-pr", "audit"}
     for skill in skills:
         assert frontmatter(skill).get("disable-model-invocation") == "true", skill
+
+
+def test_auditor_is_read_only_and_audit_skill_runs_it() -> None:
+    tools = {t.strip() for t in agents()["auditor"]["tools"].split(",")}
+    assert tools == {"Read", "Grep", "Glob", "Bash"}
+    skill = frontmatter(CLAUDE / "skills" / "audit" / "SKILL.md")
+    assert skill["agent"] == "auditor"
+    assert skill["context"] == "fork"
