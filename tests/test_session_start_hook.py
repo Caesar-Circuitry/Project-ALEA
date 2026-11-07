@@ -47,11 +47,15 @@ def test_next_roadmap_row() -> None:
     assert mod.next_roadmap_row("nothing here") is None
 
 
-def test_worktree_count(tmp_path: Path) -> None:
-    assert mod.worktree_count(tmp_path) == 0
-    (tmp_path / ".claude" / "worktrees" / "a").mkdir(parents=True)
-    (tmp_path / ".claude" / "worktrees" / "b").mkdir()
-    assert mod.worktree_count(tmp_path) == 2
+def test_count_agent_worktrees() -> None:
+    porcelain = (
+        "worktree /r/Repo\nHEAD abc\nbranch refs/heads/main\n\n"
+        "worktree /r/Repo/.claude/worktrees/agent-a\nHEAD def\n\n"
+        "worktree /r/Repo/.claude/worktrees/agent-b\nHEAD ghi\n\n"
+        "worktree /r/other/worktrees/c\nHEAD jkl\n"
+    )
+    assert mod.count_agent_worktrees(porcelain) == 2
+    assert mod.count_agent_worktrees("") == 0
 
 
 def test_summary_is_short_and_never_fails(tmp_path: Path) -> None:

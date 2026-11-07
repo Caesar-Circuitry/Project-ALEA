@@ -46,9 +46,28 @@ def next_roadmap_row(text: str) -> str | None:
     return None
 
 
+def count_agent_worktrees(porcelain: str) -> int:
+    """Count `worktree <path>` lines of `git worktree list --porcelain` under .claude/worktrees."""
+    count = 0
+    for line in porcelain.splitlines():
+        if not line.startswith("worktree "):
+            continue
+        parts = Path(line[len("worktree ") :].strip()).parts
+        pairs = zip(parts, parts[1:], strict=False)
+        if (".claude", "worktrees") in pairs:
+            count += 1
+    return count
+
+
 def worktree_count(root: Path) -> int:
-    folder = root / ".claude" / "worktrees"
-    return sum(1 for p in folder.iterdir() if p.is_dir()) if folder.is_dir() else 0
+    proc = subprocess.run(
+        ["git", "worktree", "list", "--porcelain"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    return count_agent_worktrees(proc.stdout)
 
 
 def summary(root: Path) -> list[str]:
