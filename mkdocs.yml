@@ -3,8 +3,8 @@ site_description: Strategy analysis platform of FTC team 24331 Caesar Circuitry
 repo_url: https://github.com/Caesar-Circuitry/Project-ALEA
 theme:
   name: material
-  logo: assets/helmet.png
-  favicon: assets/helmet.png
+  logo: assets/badge.png
+  favicon: assets/badge.png
   font:
     text: Open Sans
     code: JetBrains Mono

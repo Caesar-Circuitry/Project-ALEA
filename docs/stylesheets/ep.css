@@ -116,7 +116,5 @@
 [data-md-color-scheme="slate"] .md-typeset .ep-math,
 [data-md-color-scheme="slate"] .md-typeset .ep-hl { color: #FF5A5F; }
 
-/* Header logo: the helmet is mostly black, so give it a light plate on the black bar */
-.md-header__button.md-logo img {
-  height: 1.9rem; width: auto; background: #fff; border-radius: 4px; padding: 2px 4px;
-}
+/* Header logo: the hex badge, square, slightly larger than Material's default */
+.md-header__button.md-logo img { height: 2rem; width: auto; }
