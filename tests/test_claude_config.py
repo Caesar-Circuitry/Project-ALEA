@@ -150,6 +150,6 @@ def test_implementer_has_stop_gate() -> None:
 
 def test_skills_are_user_invoked_only() -> None:
     skills = list((CLAUDE / "skills").glob("*/SKILL.md"))
-    assert {s.parent.name for s in skills} == {"pr", "physics-change"}
+    assert {s.parent.name for s in skills} == {"pr", "physics-change", "start-pr"}
     for skill in skills:
         assert frontmatter(skill).get("disable-model-invocation") == "true", skill
