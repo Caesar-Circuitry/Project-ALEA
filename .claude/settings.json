@@ -53,6 +53,19 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/autoformat.py\"",
+            "timeout": 60,
+            "statusMessage": "formatting"
+          }
+        ]
+      }
     ]
   }
 }
