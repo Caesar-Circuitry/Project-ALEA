@@ -1,0 +1,19 @@
+Bootstrap: docker
+From: nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04
+
+%files
+    pyproject.toml /opt/alea/pyproject.toml
+    uv.lock /opt/alea/uv.lock
+
+%post
+    apt-get update && apt-get install -y --no-install-recommends curl ca-certificates git
+    rm -rf /var/lib/apt/lists/*
+    curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh
+
+%environment
+    export UV_PROJECT_ENVIRONMENT=/opt/alea-venv
+    export UV_PYTHON=3.12
+
+%runscript
+    # Bind the repo: apptainer run --nv --bind $PWD:/work --pwd /work alea.sif <args>
+    exec uv run python -m alea.sim.run_study "$@"
