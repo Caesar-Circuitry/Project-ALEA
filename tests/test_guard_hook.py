@@ -57,6 +57,19 @@ def test_physics_file_tools(tool: str, path: str, expected: int) -> None:
         (f"git mv _incoming/code/shotsim.py {SHOTSIM}", 0),
         (f"cat {SHOTSIM}", 0),
         ("uv run pytest 2>&1 | tail", 0),
+        # false positive: the text mentions alea/sim but the target is another file
+        ("sed -i 's/alea\\/sim/alea\\/sim2/' .claude/AGENTIC_WORKFLOW.md", 0),
+        (f'echo "see {STUDY}" > notes.txt', 0),
+        ("rm alea/sim/plots.py", 0),
+        (f"git mv {SHOTSIM} alea/sim/old.py", 0),
+        (f"git diff -- {STUDY}", 0),
+        # still blocked
+        (f"sed -i.bak s/a/b/ {SHOTSIM}", 2),
+        (f"echo hi >{STUDY}", 2),
+        (f"echo hi>>{STUDY}", 2),
+        (f"cp /tmp/x ./alea/sim/../sim/{SHOTSIM.rsplit('/', 1)[1]}", 2),
+        (f"rm -f '/repo/{STUDY}'", 2),
+        (f"cat a | tee {SHOTSIM}", 2),
     ],
 )
 def test_physics_bash(command: str, expected: int) -> None:

@@ -9,12 +9,68 @@ from __future__ import annotations
 
 import json
 import os
+import posixpath
 import re
+import shlex
 import sys
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 FROZEN = ("alea/sim/shotsim.py", "alea/sim/study.py")
-WRITE_HINTS = re.compile(r"(sed\s+-i|>\s*\S|\btee\b|(?<!git )\bmv\b|\bcp\b|\brm\b|\btruncate\b)")
+WRITE_VERBS = {"mv", "cp", "rm", "tee", "truncate", "dd", "install", "ln"}
+REDIRECT_TOKEN = re.compile(r"^[0-9&]*>")
+REDIRECT_PREFIX = re.compile(r"^[0-9&]*[<>]+&?")
+SED_INPLACE = re.compile(r"^-[a-zA-Z]*i|^--in-place")
+
+
+def _tokens(cmd: str) -> list[str]:
+    try:
+        lex = shlex.shlex(cmd, posix=True, punctuation_chars=True)
+        lex.whitespace_split = True
+        return list(lex)
+    except ValueError:
+        return cmd.split()
+
+
+def _is_write(tokens: list[str]) -> bool:
+    for i, tok in enumerate(tokens):
+        if REDIRECT_TOKEN.match(tok):
+            return True
+        if tok in WRITE_VERBS and not (tok == "mv" and i > 0 and tokens[i - 1] == "git"):
+            return True
+        if tok == "sed" and any(SED_INPLACE.match(t) for t in tokens[i + 1 :]):
+            return True
+    return False
+
+
+def _frozen_target(token: str, project_dir: Path) -> str | None:
+    """The frozen file a shell token points at, resolved against the project dir."""
+    candidates = {REDIRECT_PREFIX.sub("", token)}
+    if "=" in token:
+        candidates.add(token.split("=", 1)[1])
+    root = project_dir.as_posix()
+    for cand in candidates:
+        if not cand:
+            continue
+        posix = cand.replace("\\", "/")
+        if " " in posix and not posixpath.isabs(posix):
+            continue  # quoted prose such as "see alea/sim/study.py", not a path
+        full = posix if posixpath.isabs(posix) else f"{root}/{posix}"
+        norm = posixpath.normpath(full)
+        for f in FROZEN:
+            if norm == f"{root}/{f}" or norm.endswith("/" + f):
+                return f
+    return None
+
+
+def _bash_hit(cmd: str, project_dir: Path) -> str | None:
+    tokens = _tokens(cmd)
+    if not _is_write(tokens):
+        return None
+    for tok in tokens:
+        hit = _frozen_target(tok, project_dir)
+        if hit:
+            return hit
+    return None
 
 
 def _norm(path: str) -> str:
@@ -44,8 +100,10 @@ def main() -> int:
         hit = _touches_frozen(str(target))
     elif tool == "Bash":
         cmd = str(tool_input.get("command", ""))
-        if WRITE_HINTS.search(cmd):
-            hit = _touches_frozen(cmd)
+        project_dir = Path(
+            os.environ.get("CLAUDE_PROJECT_DIR") or payload.get("cwd") or os.getcwd()
+        )
+        hit = _bash_hit(cmd, project_dir)
     if hit:
         sys.stderr.write(
             f"BLOCKED: {hit} holds frozen shot physics (CLAUDE.md rule 1). "
