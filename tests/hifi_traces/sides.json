@@ -1,0 +1,39 @@
+{
+  "dsim_commit": "62d2446e2ebdf416548fa1641847289bf47cdf36",
+  "source_file": "src/games/biobuzz/hive.ts",
+  "scenario": "Both CELL sides and both alliances: otherSide, pivot, approach sign and taking side/cell for settled, pre-release and post-release states.",
+  "generator": {
+    "script": "tests/hifi_traces/record/record_hive.mjs",
+    "command": "cd /tmp/dsim-rec && ./node_modules/.bin/tsx record_hive.mjs /tmp/dsim-src <out-dir>   (run through `just dev`)"
+  },
+  "inputs": {
+    "sides": ["north","south"],
+    "alliances": ["red","blue"]
+  },
+  "otherSide": {
+    "north": "south",
+    "south": "north"
+  },
+  "pivot": {
+    "red": {"x":-12.75,"y":0},
+    "blue": {"x":12.75,"y":0}
+  },
+  "approach_sign": {
+    "north": -1,
+    "south": 1
+  },
+  "rows": [
+    {"alliance":"red","phase":"settled","hive":{"up":"north","contents":[],"tips":0,"tipping":0,"released":false},"taking_side":"north","approach_sign_up":-1,"approach_sign_taking":-1,"taking_cell_pos":{"x":-12.75,"y":13.439848241330608},"other_side_of_up":"south"},
+    {"alliance":"red","phase":"swing_before_release","hive":{"up":"north","contents":[],"tips":0,"tipping":3,"released":false},"taking_side":"north","approach_sign_up":-1,"approach_sign_taking":-1,"taking_cell_pos":{"x":-12.75,"y":13.439848241330608},"other_side_of_up":"south"},
+    {"alliance":"red","phase":"swing_after_release","hive":{"up":"north","contents":[],"tips":0,"tipping":1.5,"released":true,"swingRate":1},"taking_side":"south","approach_sign_up":-1,"approach_sign_taking":1,"taking_cell_pos":{"x":-12.75,"y":-13.439848241330608},"other_side_of_up":"south"},
+    {"alliance":"red","phase":"settled","hive":{"up":"south","contents":[],"tips":0,"tipping":0,"released":false},"taking_side":"south","approach_sign_up":1,"approach_sign_taking":1,"taking_cell_pos":{"x":-12.75,"y":-13.439848241330608},"other_side_of_up":"north"},
+    {"alliance":"red","phase":"swing_before_release","hive":{"up":"south","contents":[],"tips":0,"tipping":3,"released":false},"taking_side":"south","approach_sign_up":1,"approach_sign_taking":1,"taking_cell_pos":{"x":-12.75,"y":-13.439848241330608},"other_side_of_up":"north"},
+    {"alliance":"red","phase":"swing_after_release","hive":{"up":"south","contents":[],"tips":0,"tipping":1.5,"released":true,"swingRate":1},"taking_side":"north","approach_sign_up":1,"approach_sign_taking":-1,"taking_cell_pos":{"x":-12.75,"y":13.439848241330608},"other_side_of_up":"north"},
+    {"alliance":"blue","phase":"settled","hive":{"up":"north","contents":[],"tips":0,"tipping":0,"released":false},"taking_side":"north","approach_sign_up":-1,"approach_sign_taking":-1,"taking_cell_pos":{"x":12.75,"y":13.439848241330608},"other_side_of_up":"south"},
+    {"alliance":"blue","phase":"swing_before_release","hive":{"up":"north","contents":[],"tips":0,"tipping":3,"released":false},"taking_side":"north","approach_sign_up":-1,"approach_sign_taking":-1,"taking_cell_pos":{"x":12.75,"y":13.439848241330608},"other_side_of_up":"south"},
+    {"alliance":"blue","phase":"swing_after_release","hive":{"up":"north","contents":[],"tips":0,"tipping":1.5,"released":true,"swingRate":1},"taking_side":"south","approach_sign_up":-1,"approach_sign_taking":1,"taking_cell_pos":{"x":12.75,"y":-13.439848241330608},"other_side_of_up":"south"},
+    {"alliance":"blue","phase":"settled","hive":{"up":"south","contents":[],"tips":0,"tipping":0,"released":false},"taking_side":"south","approach_sign_up":1,"approach_sign_taking":1,"taking_cell_pos":{"x":12.75,"y":-13.439848241330608},"other_side_of_up":"north"},
+    {"alliance":"blue","phase":"swing_before_release","hive":{"up":"south","contents":[],"tips":0,"tipping":3,"released":false},"taking_side":"south","approach_sign_up":1,"approach_sign_taking":1,"taking_cell_pos":{"x":12.75,"y":-13.439848241330608},"other_side_of_up":"north"},
+    {"alliance":"blue","phase":"swing_after_release","hive":{"up":"south","contents":[],"tips":0,"tipping":1.5,"released":true,"swingRate":1},"taking_side":"north","approach_sign_up":1,"approach_sign_taking":-1,"taking_cell_pos":{"x":12.75,"y":13.439848241330608},"other_side_of_up":"north"}
+  ]
+}
