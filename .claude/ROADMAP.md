@@ -13,8 +13,8 @@ Last updated: 2026-11-06.
 | 1 | `setup/01-skeleton` | Folder tree, `pyproject.toml`, `uv.lock`, pre-commit, `justfile`, CODEOWNERS | merged (GitHub #1) | |
 | 2 | `setup/02-claude-workflow` | `.claude/` agents, hooks, skills, rules, `CLAUDE.md`, decision 0003 | merged (#2) | |
 | 3 | `setup/03-ci` | CI on ubuntu, macOS, Windows; Dependabot; PR template | merged (#3), **partial** | |
-| 3b | `setup/03b-ci-complete` | Finish PR 3, see below | **next** | nothing |
-| 4 | `setup/04-move-sim` | Move the shot sim in, physics frozen | todo | `_incoming/` copy, `golden_shots.npy` |
+| 3b | `setup/03b-ci-complete` | Finish PR 3, see below | in review (#8): four runners, Windows 11 ARM dropped; Dependabot branches still open | green CI on four runners |
+| 4 | `setup/04-move-sim` | Move the shot sim in, physics frozen | **next** once 3b merges | `_incoming/` copy, `golden_shots.npy` |
 | 5 | `setup/05-robot-contract` | `docs/robot-interface.md`, sample robot, contract test | todo | PR 4, `_incoming/robot_code/` |
 | 6 | `setup/06-data-importers` | SQLAlchemy models, `.rlog` reader, `.wpilog` reader | todo | PR 5 (key contract) |
 | 7 | `setup/07-dev-env-docs` | Dev containers, `hpc/`, MkDocs site, notebook, README | todo | `_incoming/` docs text |
