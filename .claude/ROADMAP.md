@@ -39,6 +39,46 @@ Merged PR 3 runs three runners and has no docs or robot job. Remaining:
 - Dropped for now: Windows 11 ARM (win32/ARM64). cryptography, pyarrow, protobuf and debugpy
   lack win_arm64 wheels. Revisit when they ship them.
 
+### Before 4: import the original ALEA code
+The original Java-validated Warp code is not in this repo yet. Clone it into the git-ignored
+`_incoming/` folder from the repo root:
+
+```
+git clone https://github.com/Caesar-Circuitry/alea-original.git _incoming/alea_project
+git -C _incoming/alea_project rev-parse HEAD
+```
+
+The HEAD must be `7e2334bc8d09a7dc64e825c0838658ae7e91a9af`. The code lives in
+`_incoming/alea_project/code/`.
+
+Run the self-test with the repo venv. Do not pass `-I` to Python: the script imports
+sibling modules.
+
+```
+just sync
+uv run python _incoming/alea_project/code/selftest.py cpu
+```
+
+At that commit, 100.000 % of the 10,000 golden shots agree. The bar is at least 99.9 %.
+
+Record these shasums (SHA-1) for the byte comparison in PR 4:
+
+| File | shasum |
+|---|---|
+| `shotsim.py` | `a2e96d19db3f3f0d9f72653a939fa8513883c974` |
+| `study.py` | `e2f14e2854c7647fa2a7f0126b84244f25df7549` |
+| `golden_shots.npy` | `2a13bb587528795e350fc0577e40fb2f7d36bcf4` |
+
+```
+shasum -a 1 _incoming/alea_project/code/shotsim.py
+```
+
+Windows: `certutil -hashfile <file> SHA1`.
+
+Copying `shotsim.py`, `study.py` or `golden_shots.npy` into the repo is a physics change. It
+needs the user's approval through `/physics-change`. Never regenerate `golden_shots.npy`. If
+it is missing, stop and ask.
+
 ### 4: move the sim (physics frozen)
 - Record the SHA-256 of `shotsim.py` and `study.py` in the PR body before anything moves.
 - Move the sim files into `alea/sim/` with `git mv`. Only import lines may change in the two
