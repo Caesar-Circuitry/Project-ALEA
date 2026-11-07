@@ -9,8 +9,8 @@ paths:
 
 # Cross-platform code
 
-ALEA runs on macOS, Linux and Windows, on x86-64 and arm64, with no GPU. CI proves it on five
-runners. When you edit code or config:
+ALEA runs on macOS, Linux and Windows, with no GPU: x86-64 and arm64 everywhere except Windows,
+which is x86-64 only for now. CI proves it on four runners. When you edit code or config:
 
 - Paths through `pathlib`; no hard-coded `/` or `\`; no assumptions about case sensitivity.
 - No shell scripts in the dev path. Helpers are Python run via `uv run python`, or `just`

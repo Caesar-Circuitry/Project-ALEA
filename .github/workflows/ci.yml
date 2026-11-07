@@ -20,7 +20,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - macos-latest
+          - windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -34,6 +38,53 @@ jobs:
       - name: Ruff format
         run: uv run ruff format --check .
       - name: Pyright
+        if: matrix.os == 'ubuntu-latest'
         run: uv run pyright
       - name: Pytest
         run: uv run pytest
+
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      robot: ${{ steps.filter.outputs.robot }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            robot:
+              - 'robot/**'
+
+  robot:
+    name: robot
+    needs: changes
+    if: needs.changes.outputs.robot == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect Gradle wrapper
+        id: wrapper
+        shell: bash
+        run: |
+          if [ -f robot/gradlew ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "robot/gradlew not found; skipping build" >> "$GITHUB_STEP_SUMMARY"
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-java@v4
+        if: steps.wrapper.outputs.present == 'true'
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.wrapper.outputs.present == 'true'
+      - name: Assemble debug
+        if: steps.wrapper.outputs.present == 'true'
+        working-directory: robot
+        run: ./gradlew assembleDebug
