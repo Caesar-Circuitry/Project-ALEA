@@ -35,7 +35,7 @@ starting a PR.
 - Edits to `alea/sim/shotsim.py` and `alea/sim/study.py` are blocked. They must stay identical
   to the Java Code Sim. The rare approved change goes through `/physics-change`.
 - An `implementer` cannot finish while `ruff check`, `ruff format --check` or `pytest` fail.
-- `git push` asks the user. Spawning `orchestrator` asks the user.
+- `git push` asks the user. `/pr` opens the PR with `gh pr create`, which also asks. Spawning `orchestrator` asks the user.
 - Every agent except the lead runs shell work in the container `alea-dev`, through `just dev`
   (`guard_container.py`). File edits stay inside the repo. Decision 0006.
 - Pre-commit rejects files over 1 MB outside `tests/golden/`, and private keys anywhere.
@@ -53,7 +53,7 @@ starting a PR.
 - Every folder has a `README.md` naming what goes there and which roadmap phase fills it.
 - Small commits on a `setup/…` or `feature/…` branch, merged by pull request via `/pr`.
   Never commit to `main`.
-- The lead runs `just dev-up` before it delegates. `git push` and `gh` run on the host only.
+- The lead runs `just dev-up` before it delegates. `git push` and `gh` run on the host only (the lead, after the user approves).
   New branches: `git switch -c <name> --no-track origin/main`.
 
 ## Commands

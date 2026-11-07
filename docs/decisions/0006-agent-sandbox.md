@@ -33,8 +33,8 @@ Options considered:
 - The image is `.devcontainer/cpu/`. It has git, uv, just and JDK 17. It has no GPU and no
   Android SDK.
 - The container has no push credentials: no `~/.ssh`, no `~/.config/gh`, no `~/.gitconfig`, no
-  `.netrc`, no credential helper. `git push` fails inside by design. The user pushes and runs
-  `gh` on the host.
+  `.netrc`, no credential helper. `git push` fails inside by design. The lead pushes and runs
+  `gh pr create` on the host, and each asks the user first.
 - Only the repo is mounted, at its real host path, so git worktrees (whose `.git` file holds an
   absolute path) resolve. Read-only overlays cover `.git/hooks`, `.git/config`, `.git/info` and
   `.git/modules`. `.env` is masked with `/dev/null`.
@@ -52,6 +52,9 @@ Options considered:
 
 Gains:
 
+- The lead can push and open PRs on the host after the user approves (`git push` and
+  `gh pr create` are in `permissions.ask`; `guard_lead.py` allows only a non-force push of a
+  non-main branch to `origin` and `gh pr create`).
 - A non-lead agent cannot push, use `gh`, or read the user's SSH keys or tokens from its shell.
 - A non-lead agent cannot read `~/.ssh` or `~/.config/gh` with `Read`, `Glob` or `Grep`. The
   hook enforces this. It is not yet seen live (see the last weakness).

@@ -18,7 +18,10 @@ They use only the standard library and run with `uv run --no-project python`.
   `.devcontainer/README.md`, including its "Prove it live" steps.
 - `guard_lead.py` (PreToolUse, lead only): keeps the `lead` agent read-only. Only checks and
   read-only git and shell commands run. The lead may also run `just dev-up`, `just dev-down` and
-  `just dev-status` on the host, but not `just dev <cmd>`. It also blocks reads of `.env`, `*.pem`
+  `just dev-status` on the host, but not `just dev <cmd>`. It allows `git push [-u] origin <branch>` (never main/master/HEAD,
+  force, delete, mirror, all, tags, a refspec with `:` or `+`, another remote, or global git
+  options) and `gh pr create`; `settings.json` makes both ask the user. Other `gh pr` writes
+  (merge, edit, close, comment) stay blocked. It also blocks reads of `.env`, `*.pem`
   and `*.key` files through the shell.
 - `subagent_gate.py` (Stop, implementer only): runs `ruff check`, `ruff format --check` and
   pytest. The implementer cannot finish while they fail. It gives up after three blocks. When

@@ -43,7 +43,8 @@
     "ask": [
       "Agent(orchestrator)",
       "Agent(model:fable)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(gh pr create *)"
     ],
     "deny": [
       "Read(./.env)",

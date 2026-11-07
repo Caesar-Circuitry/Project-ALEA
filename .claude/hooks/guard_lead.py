@@ -52,6 +52,7 @@ ALLOWED: dict[str, set[str] | None] = {
         "tag",
         "merge-tree",
         "stash",
+        "push",
     },
     "gh": {"pr", "run", "api"},
 }
@@ -82,9 +83,11 @@ SECRET_FILE = re.compile(r"(^|[/\\])(\.env(\.(?!example$)[^/\\]*)?|[^/\\]*\.(pem
 GH_API_BODY_FLAGS = {"-f", "-F", "--field", "--raw-field", "--input"}
 BLOCK_MSG = (
     "BLOCKED for the lead: `{cmd}`. The lead coordinates and verifies; it does not write. "
-    "Delegate code to `implementer`, docs to `docs-writer`, and use `/pr` to commit and push. "
+    "Delegate code to `implementer`, docs to `docs-writer`, and use `/pr` to commit, push and "
+    "open the PR. "
     "Allowed here: just (not fmt), uv sync/lock, uv run pytest|ruff (no --fix)|pyright|mkdocs "
     "build|pre-commit run, read-only git (status/diff/log/branch/show/fetch/merge-tree/...), "
+    "`git push [-u] origin <branch>` (not main, no force/refspec), `gh pr create`, "
     "read-only gh (pr view|list|checks|diff, run list|view, api GET), and read-only shell "
     "commands without redirects (except 2>&1).\n"
 )
@@ -169,6 +172,23 @@ def _positional(args: list[str]) -> list[str]:
     return [a for a in args if not a.startswith("-")]
 
 
+PUSH_PROTECTED = {"main", "master", "HEAD"}
+
+
+def _push_ok(rest: list[str]) -> bool:
+    """Only `git push [-u|--set-upstream] origin <branch>`; never main, force, refspecs."""
+    flags = [a for a in rest if a.startswith("-")]
+    pos = [a for a in rest if not a.startswith("-")]
+    if any(f not in {"-u", "--set-upstream"} for f in flags):
+        return False
+    if len(pos) != 2 or pos[0] != "origin":
+        return False
+    branch = pos[1]
+    if ":" in branch or branch.startswith("+") or not branch:
+        return False
+    return branch.rsplit("/", 1)[-1] not in PUSH_PROTECTED
+
+
 def _git_ok(args: list[str]) -> bool:
     i = 0
     while i < len(args):  # global options before the subcommand
@@ -181,6 +201,8 @@ def _git_ok(args: list[str]) -> bool:
     if i >= len(args) or args[i] not in ALLOWED["git"]:  # type: ignore[operator]
         return False
     sub, rest = args[i], args[i + 1 :]
+    if sub == "push":  # no global options (-c, -C, ...) before push
+        return i == 0 and _push_ok(rest)
     if any(a.startswith("--output") for a in rest):
         return False
     pos = _positional(rest)
@@ -207,7 +229,7 @@ def _gh_ok(args: list[str]) -> bool:
     if not args:
         return False
     if args[0] == "pr":
-        return args[1:2] != [] and args[1] in {"view", "list", "checks", "diff"}
+        return args[1:2] != [] and args[1] in {"view", "list", "checks", "diff", "create"}
     if args[0] == "run":
         return args[1:2] != [] and args[1] in {"list", "view"}
     if args[0] == "api":
