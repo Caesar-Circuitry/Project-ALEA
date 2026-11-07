@@ -78,9 +78,11 @@ name = "alea"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "alembic" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pyyaml" },
+    { name = "sqlalchemy" },
     { name = "warp-lang", version = "1.9.1", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine == 'x86_64' and sys_platform == 'darwin'" },
     { name = "warp-lang", version = "1.19.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 'x86_64' or sys_platform != 'darwin'" },
 ]
@@ -121,6 +123,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "alembic", specifier = ">=1.13" },
     { name = "cupy-cuda12x", marker = "(platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'gpu') or (sys_platform == 'linux' and extra == 'gpu')", specifier = ">=13" },
     { name = "fastapi", marker = "extra == 'web'", specifier = ">=0.115" },
     { name = "matplotlib", specifier = ">=3.9" },
@@ -131,6 +134,7 @@ requires-dist = [
     { name = "rerun-sdk", marker = "(platform_machine != 'ARM64' and extra == 'video') or (sys_platform != 'win32' and extra == 'video')", specifier = ">=0.20" },
     { name = "robotpy-wpiutil", marker = "(platform_machine != 'ARM64' and extra == 'logs') or (sys_platform != 'win32' and extra == 'logs')", specifier = ">=2025" },
     { name = "scikit-learn", marker = "extra == 'ml'", specifier = ">=1.5" },
+    { name = "sqlalchemy", specifier = ">=2.0" },
     { name = "streamlit", marker = "extra == 'web'", specifier = ">=1.40" },
     { name = "uvicorn", marker = "extra == 'web'", specifier = ">=0.32" },
     { name = "warp-lang", marker = "platform_machine != 'x86_64' or sys_platform != 'darwin'", specifier = ">=1.10" },
