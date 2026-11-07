@@ -1,0 +1,104 @@
+# ALEA roadmap
+
+Where the repo is, what each pull request delivers, and where the project goes after setup.
+Read this before starting a PR. Update the status table when a PR merges (the `/pr` skill
+reminds you).
+
+Last updated: 2026-11-06.
+
+## Setup PRs: status
+
+| # | Branch | Scope | Status | Blocked on |
+|---|---|---|---|---|
+| 1 | `setup/01-skeleton` | Folder tree, `pyproject.toml`, `uv.lock`, pre-commit, `justfile`, CODEOWNERS | merged (GitHub #1) | |
+| 2 | `setup/02-claude-workflow` | `.claude/` agents, hooks, skills, rules, `CLAUDE.md`, decision 0003 | merged (#2) | |
+| 3 | `setup/03-ci` | CI on ubuntu, macOS, Windows; Dependabot; PR template | merged (#3), **partial** | |
+| 3b | `setup/03b-ci-complete` | Finish PR 3, see below | **next** | nothing |
+| 4 | `setup/04-move-sim` | Move the shot sim in, physics frozen | todo | `_incoming/` copy, `golden_shots.npy` |
+| 5 | `setup/05-robot-contract` | `docs/robot-interface.md`, sample robot, contract test | todo | PR 4, `_incoming/robot_code/` |
+| 6 | `setup/06-data-importers` | SQLAlchemy models, `.rlog` reader, `.wpilog` reader | todo | PR 5 (key contract) |
+| 7 | `setup/07-dev-env-docs` | Dev containers, `hpc/`, MkDocs site, notebook, README | todo | `_incoming/` docs text |
+| 8 | `setup/08-hifi-stub` | `alea/hifi` stub, `fidelity` switch, decision 0005, delete `_incoming/` | todo | PR 4 |
+
+PRs 4 to 8 need the source the user copies from `~/Downloads/alea_project` into `_incoming/`.
+If `_incoming/` is missing, stop and ask; do not reconstruct the source.
+
+## What each PR must deliver
+
+### 3b: finish CI
+Merged PR 3 runs three runners and has no docs or robot job. Remaining:
+- Add `ubuntu-24.04-arm` and `windows-11-arm` to the matrix (all five targets from
+  `[tool.uv].required-environments`). Run pyright once, on ubuntu.
+- `robot` job on `robot/**` changes: Temurin JDK 17, Gradle cache, `./gradlew assembleDebug`.
+- `docs` job: `mkdocs build --strict`, deploy Pages on `main`. Add it in PR 7 if `mkdocs.yml`
+  does not exist yet.
+- `.github/workflows/gpu-tests.md`, issue templates (`bug.yml`, `feature.yml`), Gradle in
+  Dependabot, `docs/decisions/0004-branch-protection.md`.
+- Merge or close the open Dependabot branches (checkout 7, setup-uv 7, warp-lang 1.19.0).
+- Done when: CI green on all five runners.
+
+### 4: move the sim (physics frozen)
+- Record the SHA-256 of `shotsim.py` and `study.py` in the PR body before anything moves.
+- Move the sim files into `alea/sim/` with `git mv`. Only import lines may change in the two
+  frozen files.
+- Game constants into `alea/game/biobuzz.py` with `# source:` comments. Snapshot them in
+  `tests/golden/game_constants_snapshot.json` and test equality.
+- Verification scripts into `alea/sim/verification/`. `golden_shots.npy` into `tests/golden/`;
+  if it is missing, stop and ask, never regenerate.
+- `conf/study/brev72.yaml`; `run_study` keeps `--shots --device` and gains `--config`.
+- `tests/test_selftest.py` asserts at least 99.9 % agreement.
+- Agents: `implementer` moves, `physics-reviewer` signs off on the diff.
+- Done when: `just selftest` passes and `just study` writes `summary.csv`.
+
+### 5: robot contract
+- `docs/robot-interface.md` first: PsiKit key, type, units, rate, source. All keys under
+  `Alea/`. Motor current needs `FtcLogTuning.logMotorCurrent=true`.
+- `robot/`: TeamCode-only Gradle project on FTC SDK v12.0 with PsiKit from
+  `repo.dairy.foundation` (check the actual version on the Maven index).
+- `tests/test_robot_contract.py` checks the Java keys and constants against the doc and
+  `alea.game`. Decision 0002.
+- Done when: contract test passes and `./gradlew assembleDebug` is green in CI.
+
+### 6: data importers
+- `alea/data/models.py` (Team, Event, Match, Robot, LogFile, Shot) and Alembic; default
+  `sqlite:///alea.db`.
+- `alea/data/rlog.py`: pure-Python RLOG revision 2 decoder, the format PsiKit writes. A tiny
+  golden `.rlog` in `tests/golden/`.
+- `.wpilog` reader behind the `logs` extra, same key contract.
+- Done when: a sample log imports into SQLite with every contract key.
+
+### 7: dev environment and docs
+- `.devcontainer/cuda/` and `.devcontainer/cpu/`; `hpc/brev`, `hpc/slurm`, `hpc/apptainer`.
+- `mkdocs.yml` and docs text from `_incoming/`; decision 0001.
+- Notebook paired with jupytext; root README with a per-OS install table.
+- Done when: `just docs` is clean and Pages is live.
+
+### 8: hifi stub
+- `alea/hifi/` README, `DSIM_VERSION`, `fidelity: fast | hifi` (hifi raises
+  `NotImplementedError`), decision 0005 with the dsim port plan.
+- Delete `_incoming/`; no file over 1 MB outside `tests/golden/`.
+- Done when: the end-to-end checks in the setup plan pass from a fresh clone.
+
+## After setup: project phases
+
+Each `alea/` subfolder belongs to a phase; its README says which.
+
+| Phase | Area | Folder | Goal |
+|---|---|---|---|
+| 0 | Data contract | `robot/`, `alea/data/` | Every robot log and match result lands in one database |
+| 1 | Shot simulator | `alea/sim/`, `alea/game/`, `conf/`, `hpc/` | Monte Carlo studies on Brev GPUs, results in notebooks |
+| 1b | High fidelity | `alea/hifi/` | Port dsim hive tipping and ball contacts, validated against dsim traces |
+| 2 | Video review | `alea/video/` | Field homography, click-and-log, then tracking |
+| 3-5 | Analysis | `alea/analysis/` | Calibrate the sim on real shots, driver critique, robot health |
+| 6 | Web app | `alea/web/` | Streamlit for the team, FastAPI service later |
+| 7 | Match simulation | `alea/matchsim/` | Full auto and match simulation on top of the shot sim |
+
+Phase work uses `feature/<phase>-<topic>` branches, one PR each. Large ports (the dsim port in
+1b) are the kind of job `orchestrator` exists for, and only with the user's approval.
+
+## Rules for agents using this file
+
+- Pick work from the first row marked **next**. Do not start a PR whose "Blocked on" is not met.
+- One PR per row. Do not fold a later PR's scope into an earlier one.
+- When a PR merges, change its status and mark the following row **next**, in the same PR or
+  right after it.
