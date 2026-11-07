@@ -18,8 +18,8 @@ Last updated: 2026-11-07.
 | 5 | `setup/05-robot-contract` | `docs/robot-interface.md`, sample robot, contract test | merged (#19) | |
 | 6 | `setup/06-data-importers` | SQLAlchemy models, `.rlog` reader, `.wpilog` reader | merged (#24) | |
 | 7a | `setup/07a-devcontainer` | CPU dev container, agent shell sandbox, guard_container hook, decision 0006 | merged (#23) | |
-| 7 | `setup/07-dev-env-docs` | Dev containers, `hpc/`, MkDocs site, notebook, README | in review | `_incoming/` docs text. Pages needs a one-time manual setting: Settings > Pages > Source: GitHub Actions |
-| 8 | `setup/08-hifi-stub` | `alea/hifi` stub, `fidelity` switch, decision 0005, delete `_incoming/` | in review | PR 4 |
+| 7 | `setup/07-dev-env-docs` | Dev containers, `hpc/`, MkDocs site, notebook, README | merged (#26); Pages needs a one-time manual setting: Settings > Pages > Source: GitHub Actions | |
+| 8 | `setup/08-hifi-stub` | `alea/hifi` stub, `fidelity` switch, decision 0005, delete `_incoming/` | merged (#27) | |
 
 PRs 4 to 8 need the source the user copies from `~/Downloads/alea_project` into `_incoming/`.
 If `_incoming/` is missing, stop and ask; do not reconstruct the source.

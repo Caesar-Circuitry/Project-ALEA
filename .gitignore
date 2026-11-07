@@ -30,7 +30,6 @@ outputs/
 multirun/
 *.db
 *.sqlite
-_incoming/
 
 # Big file types; golden test files are re-included below
 *.mp4

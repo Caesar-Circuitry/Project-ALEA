@@ -64,7 +64,7 @@ formats = "ipynb,py:percent"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-extend-exclude = ["notebooks/*.ipynb", "robot", "hpc", "_incoming", ".claude/worktrees",
+extend-exclude = ["notebooks/*.ipynb", "robot", "hpc", ".claude/worktrees",
   # frozen copies of the Java-validated sim; never reformat (see CLAUDE.md)
   "alea/sim/shotsim.py", "alea/sim/study.py"]
 
@@ -87,7 +87,7 @@ select = ["E", "F", "I", "B", "UP", "NPY", "SIM", "PTH", "PLW1514", "S", "RUF"]
 
 [tool.pyright]
 include = ["alea", "tests"]
-exclude = ["_incoming", ".claude/worktrees", "alea/sim/verification", "alea/sim/shotsim.py", "alea/sim/study.py"]
+exclude = [".claude/worktrees", "alea/sim/verification", "alea/sim/shotsim.py", "alea/sim/study.py"]
 typeCheckingMode = "basic"
 pythonVersion = "3.12"
 venvPath = "."
