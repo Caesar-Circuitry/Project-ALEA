@@ -12,8 +12,8 @@ license = { text = "MIT" }
 dependencies = [
   "numpy>=2.0",
   # Warp dropped Intel macOS after 1.9.x; keep a best-effort fork for it.
-  "warp-lang>=1.10; sys_platform != 'darwin' or platform_machine != 'x86_64'",
-  "warp-lang<1.10; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+  "warp-lang>=1.19.0; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+  "warp-lang<1.20; sys_platform == 'darwin' and platform_machine == 'x86_64'",
   "matplotlib>=3.9",
   "pandas>=2.2",
   "scipy>=1.14",

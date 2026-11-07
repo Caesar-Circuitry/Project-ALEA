@@ -86,8 +86,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "scipy" },
     { name = "sqlalchemy" },
-    { name = "warp-lang", version = "1.9.1", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine == 'x86_64' and sys_platform == 'darwin'" },
-    { name = "warp-lang", version = "1.19.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 'x86_64' or sys_platform != 'darwin'" },
+    { name = "warp-lang" },
 ]
 
 [package.optional-dependencies]
@@ -143,8 +142,8 @@ requires-dist = [
     { name = "sqlalchemy", specifier = ">=2.0" },
     { name = "streamlit", marker = "extra == 'web'", specifier = ">=1.40" },
     { name = "uvicorn", marker = "extra == 'web'", specifier = ">=0.32" },
-    { name = "warp-lang", marker = "platform_machine != 'x86_64' or sys_platform != 'darwin'", specifier = ">=1.10" },
-    { name = "warp-lang", marker = "platform_machine == 'x86_64' and sys_platform == 'darwin'", specifier = "<1.10" },
+    { name = "warp-lang", marker = "platform_machine != 'x86_64' or sys_platform != 'darwin'", specifier = ">=1.19.0" },
+    { name = "warp-lang", marker = "platform_machine == 'x86_64' and sys_platform == 'darwin'", specifier = "<1.20" },
 ]
 provides-extras = ["gpu", "logs", "video", "ml", "web"]
 
@@ -2977,27 +2976,8 @@ wheels = [
 
 [[package]]
 name = "warp-lang"
-version = "1.9.1"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "platform_machine == 'x86_64' and sys_platform == 'darwin'",
-]
-dependencies = [
-    { name = "numpy" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4c/d9/139c0ec0eb9ac79457ff363458c5530ecce517d291a2ba0535cec6bf2709/warp_lang-1.9.1-py3-none-macosx_10_13_universal2.whl", hash = "sha256:3ce61319a268f38d135f4a26c4e75c29488a88cf3af273896e1fb2bf174131ec", size = 45402782, upload-time = "2025-10-01T07:35:38.304Z" },
-]
-
-[[package]]
-name = "warp-lang"
 version = "1.19.0"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "sys_platform == 'win32'",
-    "sys_platform == 'emscripten'",
-    "(platform_machine != 'x86_64' and sys_platform == 'darwin') or (sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
-]
 dependencies = [
     { name = "numpy" },
 ]
