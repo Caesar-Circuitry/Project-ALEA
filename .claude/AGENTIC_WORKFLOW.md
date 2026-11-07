@@ -13,7 +13,7 @@ named agent applies that agent's `tools` list to the main session, so:
 
 - `lead` has `Read, Grep, Glob, Bash, Agent(...)`, planning and web tools, and **no Edit, Write,
   MultiEdit or NotebookEdit**. It cannot edit a file even if asked.
-- `lead`'s `Agent(explorer, implementer, physics-reviewer, verifier, docs-writer, orchestrator)` entry is an
+- `lead`'s `Agent(explorer, implementer, physics-reviewer, verifier, ci-diagnoser, docs-writer, orchestrator)` entry is an
   allowlist. It cannot spawn the built-in Explore or Plan agents (Explore runs on Opus for
   subscription accounts, which is why we keep our own Haiku explorer).
 - `.claude/hooks/guard_lead.py` limits the lead's Bash to checks, read-only git (also
@@ -33,7 +33,7 @@ verify with `just lint` / `just test` / `just selftest`, report with evidence.
 |---|---|---|---|
 | 0 | Haiku | `explorer`, `docs-writer` | lookups, renames, READMEs, decision records, commit text, CSV/log parsing scripts |
 | 1 | Sonnet | `lead`, `implementer`, `verifier`, unlabeled spawns | planning, coordination, tests, importers, CI YAML, models, Streamlit, notebooks, non-physics refactors |
-| 2 | Opus | `physics-reviewer`; `/model opus` for a session | anything under `alea/sim`, `alea/game`, `alea/hifi`, `tests/golden`; `/code-review`; CI failure diagnosis; the dsim port; Warp kernels |
+| 2 | Opus | `physics-reviewer`, `ci-diagnoser`; `/model opus` for a session | anything under `alea/sim`, `alea/game`, `alea/hifi`, `tests/golden`; `/code-review`; CI failure diagnosis; the dsim port; Warp kernels |
 | 3 | Fable | `orchestrator` only | complex multi-agent, multi-PR work the user has explicitly approved for Fable |
 
 Rules:
@@ -60,7 +60,9 @@ Rules:
    `verifier` (fresh context, read-only) before `/pr`, and still runs the quick checks itself.
 5. **Review** with `physics-reviewer` for frozen paths, `/code-review` otherwise.
 6. **Ship** with `/pr`: a forked `implementer` runs the checks, commits, pushes (asks first) and
-   prints the compare link with the PR template filled in. Humans merge.
+   prints the compare link with the PR template filled in. If CI fails on the pushed branch,
+   spawn `ci-diagnoser` (read-only, Opus) to classify the failure and propose the fix, then hand
+   the fix to `implementer`. Humans merge.
 
 ## 4. What is enforced versus requested
 

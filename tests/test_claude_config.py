@@ -108,6 +108,7 @@ def test_lead_is_coordinate_only() -> None:
         "implementer",
         "physics-reviewer",
         "verifier",
+        "ci-diagnoser",
         "docs-writer",
         "orchestrator",
     }
@@ -122,6 +123,7 @@ def test_agent_models_are_pinned() -> None:
         "implementer",
         "physics-reviewer",
         "verifier",
+        "ci-diagnoser",
         "docs-writer",
         "orchestrator",
     }
@@ -132,12 +134,13 @@ def test_agent_models_are_pinned() -> None:
     assert defs["implementer"]["model"] == "sonnet"
     assert defs["physics-reviewer"]["model"] == "opus"
     assert defs["verifier"]["model"] == "sonnet"
+    assert defs["ci-diagnoser"]["model"] == "opus"
     assert [n for n, f in defs.items() if f["model"] == "fable"] == ["orchestrator"]
 
 
 def test_read_only_agents_have_no_write_tools() -> None:
     defs = agents()
-    for name in ("explorer", "physics-reviewer", "verifier"):
+    for name in ("explorer", "physics-reviewer", "verifier", "ci-diagnoser"):
         tools = defs[name]["tools"]
         assert "Edit" not in tools and "Write" not in tools, name
 

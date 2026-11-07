@@ -8,7 +8,7 @@ coordinates subagents and never edits files itself.
 - `settings.json` — default model (Sonnet), `agent: lead`, permission rules (Fable spawns and
   `git push` ask; `.env` is unreadable), and the two guard hooks.
 - `agents/` — `lead`, `explorer` (Haiku), `implementer` (Sonnet, finishes green),
-  `docs-writer` (Haiku), `physics-reviewer` (Opus), `orchestrator` (Fable, asks first).
+  `docs-writer` (Haiku), `physics-reviewer` (Opus), `ci-diagnoser` (Opus, read-only), `orchestrator` (Fable, asks first).
 - `hooks/` — `guard_physics.py` (frozen sim files, all agents), `guard_lead.py` (lead's shell is
   checks-only), `subagent_gate.py` (implementer's lint + test gate), `autoformat.py`
   (PostToolUse: ruff on edited `.py` files), `session_start.py` (SessionStart summary).
