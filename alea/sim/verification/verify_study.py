@@ -4,6 +4,7 @@ the Java sim. Needs ../rtout (AimDump, built from the robot code) and ../bb/out 
 import math
 import os
 import subprocess
+import tempfile
 
 import numpy as np
 import warp as wp
@@ -28,7 +29,6 @@ S = os.environ.get(
     "ALEA_JAVA_ROOT",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", ".."),
 )  # folder holding rtout/ and bb/
-import tempfile
 
 TMP = os.path.join(tempfile.gettempdir(), "alea_tmp.txt")
 st = Study("cpu")

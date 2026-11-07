@@ -24,6 +24,9 @@ DEFAULTS = dict(
 
 
 def all_conditions(grid=None):
+    unknown = sorted(set(grid or {}) - set(DEFAULTS))
+    if unknown:
+        raise ValueError(f"unknown condition key(s) {unknown}; valid keys: {sorted(DEFAULTS)}")
     g = {**DEFAULTS, **(grid or {})}
     out = []
     for a, s, r, b, e in itertools.product(

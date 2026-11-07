@@ -10,11 +10,12 @@ import numpy as np
 
 from alea.sim.shotsim import ShotSim, aim_heading
 
-# Java sim build: set ALEA_JAVA_BB, default is a "bb" folder next to the repo.
-BB = os.environ.get(
-    "ALEA_JAVA_BB",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "..", "bb"),
+# Java sim tree: set ALEA_JAVA_ROOT, default is the repo's parent folder (holds bb/ and rtout/).
+JAVA_ROOT = os.environ.get(
+    "ALEA_JAVA_ROOT",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", ".."),
 )
+BB = os.path.join(JAVA_ROOT, "bb")
 LUT_D = np.array([24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80.0])
 LUT_T = np.array(
     [1180, 1110, 1100, 1100, 1120, 1140, 1160, 1180, 1200, 1230, 1260, 1290, 1310, 1340, 1360.0]
