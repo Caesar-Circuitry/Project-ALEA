@@ -2,8 +2,8 @@
 
 Traces recorded from dsim's pure hive logic (`src/games/biobuzz/hive.ts`) at the pinned commit
 `62d2446e2ebdf416548fa1641847289bf47cdf36` (same hash as `alea/hifi/DSIM_VERSION`). They are the
-reference the `alea/hifi` port will be replayed against (next branch). Nothing here is replayed
-yet; `tests/test_hifi_traces_schema.py` only checks structure and the pin. Every number came
+reference the `alea/hifi` port will be replayed against (next branch). The 2D files are replayed by `tests/test_hifi_hive_*.py`;
+`tests/test_hifi_traces_schema.py` checks structure and the pin. Every number came
 from running dsim's own code (`hive.ts`, `config.ts`), not from retyping. Change the pin, and
 these files must be re-recorded.
 
