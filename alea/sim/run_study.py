@@ -13,7 +13,6 @@ off), then summary.csv and plots once everything is done.
 
 import argparse
 import csv
-import math
 import sys
 import time
 from pathlib import Path
@@ -23,7 +22,7 @@ import warp as wp
 import yaml
 
 from alea.hifi import FIDELITY_CHOICES, check_fidelity
-from alea.sim import plots, selftest
+from alea.sim import plots, results, selftest
 from alea.sim.conditions import all_conditions
 from alea.sim.study import Study
 
@@ -114,20 +113,7 @@ def main(argv=None):
     rows = []
     for c in conds:
         z = np.load(out / f"cond_{c['id']:03d}.npz")
-        T, F, H = z["tries"].sum(), z["fired"].sum(), z["hits"].sum()
-        p = H / F if F else float("nan")
-        ci = 1.96 * math.sqrt(p * (1 - p) / F) if F else float("nan")
-        rows.append(
-            dict(
-                c,
-                shots=int(T),
-                fired=int(F),
-                scored=int(H),
-                pct_fired=round(100 * F / T, 2),
-                pct_scored_of_fired=round(100 * p, 2),
-                plus_minus_95=round(100 * ci, 2),
-            )
-        )
+        rows.append(results.summary_row(c, z))
     with (out / "summary.csv").open("w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0]))
         w.writeheader()

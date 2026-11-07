@@ -8,6 +8,7 @@ Monte Carlo shot simulator on NVIDIA Warp (GPU, CPU fallback). Physics here is f
 - `selftest.py`: golden-shot check plus kernel consistency checks; reads `tests/golden/golden_shots.npy`.
 - `run_study.py`: `python -m alea.sim.run_study [--config conf/study/brev72.yaml] [--shots N] [--device cpu]`; writes `results/study/` (git-ignored) with `cond_XXX.npz`, `summary.csv`, plots. Resumes a stopped run.
 - `conditions.py`: builds the condition grid (defaults = brev72). `plots.py`: pictures from a finished study.
+- `results.py`: `load_summary` (summary.csv, or rebuilt from `cond_XXX.npz`), `factor_effects`, `worst_best`; plain Python, no GPU. Used by `plots.py` and `notebooks/02_study_results.py`.
 - `verification/`: checks against the Java sim.
 
 `setup_brev.sh` from the original is not moved here; Linux-only setup lives in `hpc/` (roadmap PR 7).
