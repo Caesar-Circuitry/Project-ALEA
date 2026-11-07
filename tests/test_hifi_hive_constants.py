@@ -56,7 +56,8 @@ def test_hive_ts_reads_are_all_present() -> None:
         assert hasattr(hive_constants, name), name
 
 
-PORTED = sorted(p for p in HIFI.glob("*.py") if p.name != "__init__.py")
+GLUE = ["frame.py", "hifi_study.py", "hive_session.py"]  # original ALEA code that uses the port
+PORTED = sorted(p for p in HIFI.glob("*.py") if p.name != "__init__.py" and p.name not in GLUE)
 
 
 def test_ported_files_exist() -> None:
@@ -70,3 +71,11 @@ def test_ported_file_header(path: Path) -> None:
     assert first.startswith(HEADER), f"{path.name}: first line is {first!r}"
     assert DSIM_VERSION in first, f"{path.name}: first line lacks the pinned hash"
     assert "PolyForm Noncommercial 1.0.0" in text.split('"""')[1], f"{path.name}: licence not named"
+
+
+@pytest.mark.parametrize("name", GLUE)
+def test_glue_file_header(name: str) -> None:
+    doc = (HIFI / name).read_text(encoding="utf-8").split('"""')[1]
+    first = doc.splitlines()[0]
+    assert first.startswith("Uses the dsim port") and DSIM_VERSION in first
+    assert "PolyForm Noncommercial 1.0.0" in doc

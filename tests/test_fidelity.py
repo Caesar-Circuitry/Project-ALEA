@@ -1,4 +1,4 @@
-"""The fidelity switch: fast works, hifi is a stub."""
+"""The fidelity switch: fast and hifi both validate; hifi needs its open parameters."""
 
 import pytest
 
@@ -11,9 +11,8 @@ def test_fast_ok():
     assert DSIM_VERSION
 
 
-def test_hifi_not_implemented():
-    with pytest.raises(NotImplementedError, match="0005"):
-        check_fidelity("hifi")
+def test_hifi_ok():
+    assert check_fidelity("hifi") == "hifi"
 
 
 def test_unknown_rejected():
@@ -21,6 +20,8 @@ def test_unknown_rejected():
         check_fidelity("ultra")
 
 
-def test_run_study_hifi_raises():
-    with pytest.raises(NotImplementedError, match="0005"):
-        run_study.main(["--fidelity", "hifi", "--plan"])
+def test_run_study_hifi_needs_open_parameters(tmp_path):
+    cfg = tmp_path / "c.yaml"
+    cfg.write_text("fidelity: hifi\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="shot_interval_s"):
+        run_study.main(["--config", str(cfg), "--plan"])
