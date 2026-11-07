@@ -4,11 +4,11 @@ The agent sandbox. Every agent except the lead runs its shell commands in the `a
 container. The lead stays on the host. Why: `docs/decisions/0006-agent-sandbox.md`.
 
 - `cpu/` is the image in use now (landed in PR 7a). See `cpu/README.md`.
-- `cuda/` (NGC CUDA image for Linux x86-64 and Brev) comes in PR 7.
+- `cuda/` is the CUDA image for Linux x86-64 and Brev (PR 7, untested). See `cuda/README.md`.
 
 Needs `docker` and `just` on the host. Run these from the repo root.
 
-**Roadmap phase:** 1 (the cpu image landed in PR 7a; cuda/ comes in PR 7)
+**Roadmap phase:** 1 (the cpu image landed in PR 7a; cuda/ landed in PR 7)
 
 ## Start and stop
 
