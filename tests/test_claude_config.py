@@ -33,6 +33,48 @@ def settings() -> dict:
     return json.loads((CLAUDE / "settings.json").read_text(encoding="utf-8"))
 
 
+HOOK_PATH = re.compile(r'(\\?")\$CLAUDE_PROJECT_DIR/(\.claude/hooks/[\w.-]+)(\\?")')
+
+
+def hook_script(command: str) -> Path:
+    match = HOOK_PATH.search(command)
+    assert match, f"hook must use a quoted $CLAUDE_PROJECT_DIR path: {command}"
+    return ROOT / match.group(2)
+
+
+def hook_commands() -> list[str]:
+    """Every hook command in settings.json and in the agent frontmatter blocks."""
+    commands: list[str] = []
+
+    def walk(node: object) -> None:
+        if isinstance(node, dict):
+            command = node.get("command")
+            if isinstance(command, str):
+                commands.append(command)
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk(settings().get("hooks", {}))
+    for path in sorted((CLAUDE / "agents").glob("*.md")):
+        match = re.match(r"^---\n(.*?)\n---", path.read_text(encoding="utf-8"), re.S)
+        assert match, f"{path} has no frontmatter"
+        commands += re.findall(r"^\s*(?:-\s*)?command:\s*(.+)$", match.group(1), re.M)
+    return commands
+
+
+def test_hook_commands_use_quoted_project_dir() -> None:
+    hooks = [c for c in hook_commands() if ".claude/hooks/" in c]
+    assert len(hooks) >= 3
+    for command in hooks:
+        match = HOOK_PATH.search(command)
+        assert match, f"hook must use a quoted $CLAUDE_PROJECT_DIR path: {command}"
+        assert match.group(1) == match.group(3)
+        assert hook_script(command).is_file(), command
+
+
 def test_settings_defaults() -> None:
     s = settings()
     assert s["model"] == "sonnet"
@@ -48,8 +90,7 @@ def test_settings_defaults() -> None:
 def test_hooks_point_at_existing_scripts_and_fail_closed() -> None:
     for group in settings()["hooks"]["PreToolUse"]:
         for hook in group["hooks"]:
-            script = hook["command"].split()[-1]
-            assert (ROOT / script).exists(), script
+            assert hook_script(hook["command"]).exists(), hook["command"]
             assert hook.get("onFailure") == "block", "policy hooks must fail closed"
 
 
