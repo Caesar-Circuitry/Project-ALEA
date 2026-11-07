@@ -18,8 +18,9 @@ licensed PolyForm Noncommercial 1.0.0, which differs from the rest of ALEA.
   `alea.hifi.check_fidelity`; `hifi` raises `NotImplementedError` pointing here until the port
   lands. `alea/sim/shotsim.py` and `study.py` stay frozen and keep matching the Java Code Sim.
 - The port goes into `alea/hifi/` only, in phase 1b, by this plan:
-  1. Pin the dsim commit in `alea/hifi/DSIM_VERSION` (currently a placeholder; no commit is
-     documented yet). Every ported file starts with "Ported from dsim by genius0412" and that hash.
+  1. Pin the dsim commit in `alea/hifi/DSIM_VERSION` (pinned 2026-11-07 to `62d2446e`, the
+     tip of dsim `main`; see `alea/hifi/PORTING.md`). Every ported file starts with "Ported from
+     dsim by genius0412" and that hash.
   2. Port hive tipping (pivot, tilt dynamics, tip table) first, then ball-to-ball and
      ball-to-hive contacts.
   3. Take field geometry only from `alea/game/`. Where dsim's numbers differ, list the
@@ -36,4 +37,6 @@ licensed PolyForm Noncommercial 1.0.0, which differs from the rest of ALEA.
 - Nothing in the fast path changes now; the stub only adds the option and the error message.
 - Results from `hifi` must never be mixed with `fast` results in one study without labelling.
 - Noncommercial terms limit how `alea/hifi/` can be redistributed; check before publishing.
-- The DSIM_VERSION placeholder must be replaced before the first ported line is merged.
+- The DSIM_VERSION pin is in place. Change it deliberately: a new commit means new traces.
+- dsim's 3D hive and contacts run on its rigid-body engine layer, so they are much harder to
+  port than its pure hive logic; `alea/hifi/PORTING.md` splits the two.
