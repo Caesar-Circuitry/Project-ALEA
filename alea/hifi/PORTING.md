@@ -2,8 +2,22 @@
 
 Pinned dsim commit: `62d2446e2ebdf416548fa1641847289bf47cdf36` (default branch `main`, committed
 2026-11-02; github.com/genius0412/dsim, PolyForm Noncommercial 1.0.0, copy in `LICENSE-dsim`).
-Plan and licensing: `docs/decisions/0005-hifi-dsim-port.md`. Ported so far (phase 1b): the pure hive logic only (below). Not ported: the 3D hive, contacts,
-nectar box, and any use of the port by the study kernel; `check_fidelity('hifi')` still raises.
+Plan and licensing: `docs/decisions/0005-hifi-dsim-port.md`. Ported so far (phase 1b): the pure hive logic (below), wired into `fidelity: hifi` as hive
+sessions after the unchanged fast kernel (`hive_session.py`, `hifi_study.py`, `frame.py`). Not
+ported: the 3D hive, contacts, nectar box.
+
+## Wiring (phase 1b step A)
+
+The dsim-to-ALEA frame is a shift by `FIELD_SIZE_IN / 2` = 70.65 in on both axes (not 70.75);
+converted red/blue pivots are at x = 57.90 / 83.40, y = 70.65, so the pair spacing is 25.5 in as
+in `alea.game` and both axes differ from `HIVE_X_IN` / `HIVE_Y_IN` by 0.10 in (open, evidence
+item 1; test in `tests/test_hifi_frame.py`). The official tip thresholds (evidence item 8) are
+now tested against the ported logic in `tests/test_hifi_tip_table.py`.
+
+Open parameters left explicit, none chosen: restitution (only the study's `bounce` axis, in the
+fast kernel; the hive miss bounce is unused), session size, `shot_interval_s`,
+`retarget_after_tip`; and still open from the evidence list: cell width, height and centre
+offset, opening height, frame origin.
 
 ## Ported (branch feature/1b-hive-logic)
 
@@ -128,7 +142,7 @@ Status:
 - Open: frame origin (item 1), width definition (item 4), height and centre offset (item 5),
   opening height (item 6), restitution (item 9).
 
-Nothing here changes any constant. `alea/game/` is untouched.
+Nothing here changes any constant. `alea/game/` is untouched. Item 8 is now tested (step A).
 
 ## Validation
 
