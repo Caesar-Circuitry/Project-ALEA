@@ -41,6 +41,10 @@ docs-serve:
 robot:
     cd robot && ./gradlew assembleDebug
 
+# Remove clean agent worktrees under .claude/worktrees/ and their merged worktree-agent-* branches
+worktree-prune:
+    uv run python -m alea.tools.worktree_prune
+
 # GPU tests (Brev / any NVIDIA machine)
 gpu-test:
     uv run pytest -m gpu
