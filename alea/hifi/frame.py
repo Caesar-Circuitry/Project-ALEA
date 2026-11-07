@@ -13,7 +13,10 @@ alea/hifi/PORTING.md (evidence item 1). It is NOT 70.75. Consequence, stated her
 so the 0.10 in is reported, not absorbed. No axis flip is assumed: dsim "north" is +y, matching
 `HIVE_UP` (red's up cell is toward -y = "south", dsim's `BB_HIVE_UP_STAGED`).
 
-Used only where the session logic needs a position (the capture test of a scored ball).
+Role in the session model, stated plainly: `hive_session.offer_ball` builds the scored ball's
+position in the ALEA frame and converts it to dsim's frame for `hive_accepts`. The two
+conversions cancel (up to rounding), so the conversion is exercised but RESULT-NEUTRAL there; it
+is kept, with its tests, because later steps (contacts, robot positions) will need it.
 """
 
 from alea.game.biobuzz import FIELD_SIZE_IN

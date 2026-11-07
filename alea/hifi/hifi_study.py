@@ -22,7 +22,7 @@ from alea.hifi.hive_session import SessionParams, run_sessions
 
 FIDELITY_LABEL = "hifi"
 DEFAULT_OUT = "results/study-hifi"
-LABEL_TEXT = "hifi: fast shot kernel + dsim hive logic (not comparable with fast alone)"
+LABEL_TEXT = "hifi session model; hive at rest during swing (kernel limit); not measured physics"
 _KEYS = ("n_sessions", "shots_per_session", "shot_interval_s", "retarget_after_tip")
 
 
@@ -53,6 +53,7 @@ def run_condition(study, cond: dict, shots: int, seed: int, batch: int, params: 
     n_fired = int(fired.sum())
     p_score = int(hits.sum()) / n_fired if n_fired else 0.0
     sessions = run_sessions(p_score, params.session, [seed, int(cond["id"]), 1])
+    sessions["hive_caveat"] = LABEL_TEXT  # label only; rides along in npz and summary_hifi.csv
     return tries, fired, hits, sessions
 
 

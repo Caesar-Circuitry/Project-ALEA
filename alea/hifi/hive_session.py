@@ -33,6 +33,9 @@ What is NOT modelled
   no spilled ball is re-shot. Nectar is not shot; the hive holds only the staged nectar.
 * The robot's position is not tracked per shot; only the condition's aggregate score rate is
   used, so position-dependent scoring and fire-hold are inside `p_score`, not in the session.
+* The hive is at rest in the kernel during the swing (kernel limit), so every `hive_*` result
+  is a session-model output, not measured physics. Each hifi record carries that as the
+  `hive_caveat` label (no numeric effect).
 * Restitution is not used by the hive logic here (`hive_deflect`, the only user of dsim's
   0.3 miss bounce, is not called). It enters only through the study's per-condition `bounce`
   axis, in the fast kernel. It is an OPEN number (PORTING.md evidence item 9); nothing is chosen.
@@ -45,7 +48,8 @@ Explicit parameters (no default is chosen for the first four; see `SessionParams
 `n_sessions`, `shots_per_session`, `shot_interval_s` (how often the robot shoots, not measured),
 `retarget_after_tip` (does the driver aim at whichever cell is taking elements now, or keep
 aiming at the cell that was up at the start). `initial_nectar` defaults to the field-setup
-evidence; `tick_s` is numerical resolution (1/60 s as in the dsim timer traces); `alliance` is red.
+evidence; `shot_interval_s` must be a whole multiple of `tick_s` (else ValueError, no silent
+rounding); `tick_s` is numerical resolution (1/60 s as in the dsim timer traces); `alliance` is red.
 """
 
 from collections.abc import Callable
@@ -109,6 +113,11 @@ class SessionParams:
             raise ValueError("n_sessions and shots_per_session must be at least 1")
         if self.shot_interval_s <= 0 or self.tick_s <= 0:
             raise ValueError("shot_interval_s and tick_s must be positive")
+        ratio = self.shot_interval_s / self.tick_s
+        if abs(ratio - round(ratio)) > 1e-6:
+            raise ValueError(
+                f"shot_interval_s must be a whole number of ticks (tick_s = {self.tick_s:.6f} s)"
+            )
         if self.initial_nectar < 0:
             raise ValueError("initial_nectar must be >= 0")
 

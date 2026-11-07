@@ -31,7 +31,7 @@ _INT_KEYS = {
     "hive_retarget_after_tip",
     "hive_initial_nectar",
 }
-_STR_KEYS = {"fidelity"}
+_STR_KEYS = {"fidelity", "hive_caveat"}
 
 
 def detect_fidelity(out_dir) -> str | None:
@@ -98,7 +98,13 @@ def load_summary(out_dir) -> list[dict]:
                 row["fidelity"] = "hifi"
                 row.update(
                     {
-                        k: (int(z[k]) if k in _INT_KEYS else float(z[k]))
+                        k: (
+                            str(z[k])
+                            if k in _STR_KEYS
+                            else int(z[k])
+                            if k in _INT_KEYS
+                            else float(z[k])
+                        )
                         for k in z.files
                         if k.startswith("hive_")
                     }

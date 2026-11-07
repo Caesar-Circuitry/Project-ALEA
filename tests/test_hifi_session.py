@@ -109,3 +109,52 @@ def test_fast_results_unchanged_by_hifi_wiring():
         assert np.array_equal(a, b)
     assert sess["hive_p_score_input"] == pytest.approx(int(hits.sum()) / int(fired.sum()))
     assert params_match(sess, hp)
+
+
+def test_interval_must_be_whole_ticks():
+    with pytest.raises(ValueError, match="whole number of ticks"):
+        _params(shot_interval_s=0.0123)
+    assert _params(shot_interval_s=3.0).shot_interval_s == 3.0
+
+
+def _suptitle(monkeypatch, out):
+    import matplotlib.figure
+
+    from alea.sim import plots
+
+    seen = []
+    orig = matplotlib.figure.Figure.suptitle
+
+    def spy(self, t, *a, **k):
+        seen.append(t)
+        return orig(self, t, *a, **k)
+
+    monkeypatch.setattr(matplotlib.figure.Figure, "suptitle", spy)
+    plots.main(out)
+    return seen[0]
+
+
+def test_plot_suptitle_fast_and_hifi(tmp_path, monkeypatch):
+    grid = dict(aim_deg=[1.0], speed_pct=[2.0], robot_ips=[0.0], ball_in=[2.8], bounce=[0.45])
+    cond = all_conditions(grid)[0]
+    fast, hifi = tmp_path / "fast", tmp_path / "hifi"
+    fast.mkdir()
+    hifi.mkdir()
+    arr = np.full((2, 2), 40, dtype=np.int64)
+    for out, fid in ((fast, "fast"), (hifi, "hifi")):
+        extra = (
+            {"fidelity": "hifi", "hive_caveat": "x", "hive_sessions": 1} if fid == "hifi" else {}
+        )
+        np.savez_compressed(
+            results.cond_path(out, 0, fid),
+            tries=arr + 5,
+            fired=arr,
+            hits=arr // 2,
+            shots=1,
+            seed=1,
+            **extra,
+            **cond,
+        )
+    base = "Effect of each variable (averaged over all the others)"
+    assert _suptitle(monkeypatch, fast) == base  # exactly the origin/main text
+    assert _suptitle(monkeypatch, hifi) == "[hifi] " + base

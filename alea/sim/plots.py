@@ -69,7 +69,7 @@ def main(out: str | Path = "results/study"):
     out = Path(out)
     rows = results.load_summary(out)
     fidelity = results.detect_fidelity(out) or "fast"
-    label = f"[{fidelity}] " if fidelity == "hifi" else ""
+    tag = f"[{fidelity}] " if fidelity == "hifi" else ""
     prefix = "hifi_" if fidelity == "hifi" else ""
 
     worst = results.worst_best(rows, 1)[0][0]
@@ -78,7 +78,7 @@ def main(out: str | Path = "results/study"):
             np.load(results.cond_path(out, int(r["id"]), fidelity)),
             results.describe(r),
             out / (prefix + fn),
-            label,
+            tag,
         )
 
     groups = list(results.factor_effects(rows).items())
@@ -92,7 +92,7 @@ def main(out: str | Path = "results/study"):
         ax.set_title(label, fontsize=10)
         ax.set_ylim(0, 100)
     axs[0].set_ylabel("% of fired shots that score")
-    fig.suptitle(f"{label}Effect of each variable (averaged over all the others)", fontsize=11)
+    fig.suptitle(f"{tag}Effect of each variable (averaged over all the others)", fontsize=11)
     fig.tight_layout()
     fig.savefig(out / f"{prefix}effects.png")
     plt.close(fig)
