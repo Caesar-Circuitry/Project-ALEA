@@ -40,8 +40,9 @@ starting a PR.
   `tests/golden/golden_shots.npy`; ask the user for it.
 - Game values live only in `alea/game/`. Units go in names: `dist_in`, `speed_in_s`, `t_s`.
 - No secrets in git. `.env` is ignored; `.env.example` carries empty values.
-- Code runs on macOS, Linux and Windows, x86-64 and arm64. Use `pathlib`, no shell scripts in
-  the dev path, platform markers in `pyproject.toml` instead of dropping a platform.
+- Code runs on macOS, Linux and Windows. Windows is x86-64 only for now (Windows arm64 is
+  dropped until its dependencies ship wheels). Use `pathlib`, no shell scripts in the dev path,
+  platform markers in `pyproject.toml` instead of dropping a platform.
 - Every folder has a `README.md` naming what goes there and which roadmap phase fills it.
 - Small commits on a `setup/…` or `feature/…` branch, merged by pull request via `/pr`.
   Never commit to `main`.
@@ -63,6 +64,6 @@ just study      uv run python -m alea.sim.run_study --shots 10000 --device cpu
 
 - The physics hook also blocks a shell command that names a frozen file next to a redirect,
   `sed -i`, `mv`, `cp` or `rm`. `git mv` of those files is allowed.
-- `uv.lock` resolves for five platforms at once. If a package has no wheel for one of them, add
+- `uv.lock` resolves for four platforms at once. If a package has no wheel for one of them, add
   a marker on that dependency; CI on that platform is the proof.
 - The venv is not shared between worktrees. `just sync` is cheap once the cache is warm.
