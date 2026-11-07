@@ -4,7 +4,7 @@ Where the repo is, what each pull request delivers, and where the project goes a
 Read this before starting a PR. Update the status table when a PR merges (the `/pr` skill
 reminds you).
 
-Last updated: 2026-11-06.
+Last updated: 2026-11-07.
 
 ## Setup PRs: status
 
@@ -14,8 +14,8 @@ Last updated: 2026-11-06.
 | 2 | `setup/02-claude-workflow` | `.claude/` agents, hooks, skills, rules, `CLAUDE.md`, decision 0003 | merged (#2) | |
 | 3 | `setup/03-ci` | CI on ubuntu, macOS, Windows; Dependabot; PR template | merged (#3), **partial** | |
 | 3b | `setup/03b-ci-complete` | Finish PR 3, see below | merged (#8): four runners, Windows 11 ARM dropped; Dependabot branches still open | green CI on four runners |
-| 4 | `setup/04-move-sim` | Move the shot sim in, physics frozen | in progress | `_incoming/` copy, `golden_shots.npy` |
-| 5 | `setup/05-robot-contract` | `docs/robot-interface.md`, sample robot, contract test | todo | PR 4, `_incoming/robot_code/` |
+| 4 | `setup/04-move-sim` | Move the shot sim in, physics frozen | merged (#16) | |
+| 5 | `setup/05-robot-contract` | `docs/robot-interface.md`, sample robot, contract test | **next** | PR 4, `_incoming/robot_code/` |
 | 6 | `setup/06-data-importers` | SQLAlchemy models, `.rlog` reader, `.wpilog` reader | todo | PR 5 (key contract) |
 | 7 | `setup/07-dev-env-docs` | Dev containers, `hpc/`, MkDocs site, notebook, README | todo | `_incoming/` docs text |
 | 8 | `setup/08-hifi-stub` | `alea/hifi` stub, `fidelity` switch, decision 0005, delete `_incoming/` | todo | PR 4 |
