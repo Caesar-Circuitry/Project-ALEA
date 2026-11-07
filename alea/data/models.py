@@ -82,6 +82,8 @@ class LogFile(Base):
     # contract keys that were absent from the log (full Alea/... names)
     missing_keys: Mapped[list[str]] = mapped_column(JSON, default=list)
     metadata_json: Mapped[dict[str, str]] = mapped_column(JSON, default=dict)
+    # how launch detection went (key used, or why it found nothing); see alea/data/launches.py
+    launch_note: Mapped[str | None] = mapped_column(String(400))
 
     contract_version: Mapped[int | None] = mapped_column(Integer)
     red_hive_x_in: Mapped[float | None] = mapped_column(Float)
@@ -95,6 +97,9 @@ class LogFile(Base):
     robot: Mapped[Robot | None] = relationship(back_populates="log_files")
     match: Mapped[Match | None] = relationship(back_populates="log_files")
     shots: Mapped[list[Shot]] = relationship(
+        back_populates="log_file", cascade="all, delete-orphan"
+    )
+    launches: Mapped[list[Launch]] = relationship(
         back_populates="log_file", cascade="all, delete-orphan"
     )
 
@@ -120,3 +125,30 @@ class Shot(Base):
     in_range: Mapped[bool | None] = mapped_column(Boolean)
 
     log_file: Mapped[LogFile] = relationship(back_populates="shots")
+
+
+class Launch(Base):
+    """One detected ball launch (decision 0007): a sharp flywheel velocity dip.
+
+    The aim columns copy the Alea/Aim/* sample nearest in time, so a launch can be joined to
+    what the aim assist believed when the ball left.
+    """
+
+    __tablename__ = "launch"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    log_file_id: Mapped[int] = mapped_column(ForeignKey("log_file.id"), index=True)
+    t_s: Mapped[float] = mapped_column(Float)
+    flywheel_ticks_per_sec_before: Mapped[float] = mapped_column(Float)
+    flywheel_ticks_per_sec_after: Mapped[float] = mapped_column(Float)
+    dip_ticks_per_sec: Mapped[float] = mapped_column(Float)
+
+    target: Mapped[str | None] = mapped_column(String(20))
+    distance_in: Mapped[float | None] = mapped_column(Float)
+    off_axis_deg: Mapped[float | None] = mapped_column(Float)
+    heading_error_deg: Mapped[float | None] = mapped_column(Float)
+    lut_ticks_per_sec: Mapped[float | None] = mapped_column(Float)
+    aimed: Mapped[bool | None] = mapped_column(Boolean)
+    in_range: Mapped[bool | None] = mapped_column(Boolean)
+
+    log_file: Mapped[LogFile] = relationship(back_populates="launches")
