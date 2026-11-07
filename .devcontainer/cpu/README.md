@@ -9,6 +9,8 @@ The CPU image for the agent sandbox. `just dev-up` builds it from this folder an
 
 - Base: `python:3.12-slim-bookworm`.
 - `uv` 0.13.7, copied from the official uv image.
+- Node.js 22.17.0 and npm, copied from the official node image. Only for running third-party
+  TypeScript such as dsim (phase 1b); the project itself is Python.
 - `just` 1.45.0, from PyPI (`rust-just`).
 - git, curl, ca-certificates, `libatomic1` (the node runtime that pyright needs) and OpenJDK 17
   (headless).
@@ -59,7 +61,8 @@ docker build --no-cache -t alea-dev:cpu --build-arg UID=1000 --build-arg GID=100
 just dev uv --version
 just dev just --version
 just dev java -version
+just dev node --version
 just dev git --version
 ```
 
-Expected: uv 0.13.7, just 1.45.0, openjdk 17.
+Expected: uv 0.13.7, just 1.45.0, openjdk 17, node v22.17.0.
