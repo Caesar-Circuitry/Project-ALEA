@@ -38,6 +38,59 @@ offered by the recorder and added only if dsim's `hiveAccepts` says yes (that ad
 recorder's, documented in `inputs.launch_rule`). The `kindOf` callback and the RNGs belong to the
 caller in dsim, so the recorder defines them.
 
+## 3D hive traces (`sim3d/`)
+
+Recorded from dsim's REAL 3D code: `src/games/biobuzz/sim3d/hive3d.ts`, `contacts3d.ts` and the
+deterministic Rapier3d engine layer under them, driven through dsim's own `step3d` at dt = 1/60 s.
+It does run under tsx with `--ignore-scripts`: needs `@dimforge/rapier3d-deterministic-compat`
+0.20.0 (wasm, "compat" build, `await init()`; no native or postinstall step) and
+`@dimforge/rapier2d-compat` 0.19.3 (`initPhysics()` loads the 2D engine too). Recorder:
+`record_3d/record_hive3d.mts`. Same top-level fields as above plus `source_files`; units are
+dsim's (inches, seconds, radians, field-centred frame). The sim3d result is NOT bit-reproducible
+across machines (dsim's own `hive-calibrate.ts` header says so for a Windows run), so a port
+replay needs tolerances; this recording was checked for determinism on one machine only.
+
+| File | Scenario |
+|---|---|
+| `constants3d.json` | the config.ts constants the 3D hive reads (`BB3_HIVE_*`, seat depth, element mass, tilt), GRAVITY, SIM_DT, tray mass props, centre-of-mass w, pivot x, cell boxes |
+| `statics3d.json` | pure functions: `hiveContentsTorque` (staged loads x tilt grid, both alliances), `hiveRestoringTorque`, `hiveHoldTorque`, `insideCell` (grid with min depth 0 and the seat depth) |
+| `loads_no_tip_blue.json` | `step3d` per-tick trace, blue hive: empty rest (240 ticks), 7P, 2P+3N, 0P+4N for 480 ticks; the detent holds, angle stays at the stop |
+| `loads_tip_blue.json` | same for 8P, 3P+3N, 1P+4N, 0P+5N (guide packing) and 8P (line2 packing), 540 ticks: breakaway, swing, release (SPILLS event), TIP event |
+| `loads_red.json` | red hive (up cell south, opposite sign): 8P tips, 7P holds, 540 ticks |
+| `joint_tick.json` | `hive3dJointTick` (hiveDynamicTick) called once on staged hive states: near stop, just off the stop (spill tagging), mid swing, level, far stop spent, far stop moving, failed swing reset, empty cell, angle undefined |
+| `g409_contacts.json` | `hiveContactPass` through `step3d`: 8P tip with the robot parked away (no G409) vs under the down cell (G409 lines), 600 ticks |
+
+Load-trace row fields: `pollen`, `nectar`, `alliance`, `packing`, `seed`, `ticks`, `element_ids`,
+`summary` (tick of first `tipping>0`, first `released`, first tip; final tips, up side, tray angle,
+contents count, elements below z = 2 in, final load), `events` as `[tick, text]`, and `columns`
+with one entry per tick: `tray_theta_rad` / `tray_omega_rad_s` (Rapier body, full precision),
+`hive_angle_rad` / `hive_ang_vel_rad_s` (dsim's world JSON, rounded to 4 decimals by dsim),
+`tipping_s`, `released` (0/1), `tips`, `up`, `contents_n` (derived membership), `spill_n` (spill tag
+count for that alliance), `tray_held` (detent pin on, 0/1), `nectar_due`. G409 rows: `spill_n`,
+`g409_lines_total`, `lowest_tagged_z_in` (-1 when none tagged) per tick. A hive written without
+`angle` / `angVel` means `undefined`. Worlds are the stock `createBiobuzzWorld('free', seed, ..., '3d')`
+with `world.balls` cleared and the load staged in the up cell by the recorder (staging rule in
+`statics3d.json` `inputs`); `contents` in `joint_tick.json` is whatever the fresh world carried
+(ids 44..46), not the staged elements.
+
+Not covered: `hiveDetentHold` / `hiveContactPass` are only reached through `step3d` (no isolated
+call), launches into a swinging tray, robot contact with the tray, `__setDetentForCalibration`,
+the kinematic tray path (`hive3dTick` returns at once when the dynamic tray is on, as it is by
+default), `engineImpl` internals beyond the tray body, and anything past 600 ticks.
+
+Rerun (versions: node v22.17.0, npm 10.9.2, tsx 4.23.15; `<wt>` = absolute worktree path):
+
+```
+just dev python3 <wt>/tests/hifi_traces/record_3d/fetch_dsim.py        # prints e.g. /tmp/dsim3d-XXXX/src, verifies HEAD == pin
+just dev npm install --ignore-scripts --no-audit --no-fund --prefix /tmp/dsim3d-XXXX @dimforge/rapier3d-deterministic-compat@0.20.0 @dimforge/rapier2d-compat@0.19.3 tsx@4.23.15
+just dev cp <wt>/tests/hifi_traces/record_3d/record_hive3d.mts /tmp/dsim3d-XXXX/record_hive3d.mts
+just dev /tmp/dsim3d-XXXX/node_modules/.bin/tsx /tmp/dsim3d-XXXX/record_hive3d.mts /tmp/dsim3d-XXXX/src <wt>/tests/hifi_traces/sim3d
+```
+
+`node_modules` sits in the PARENT of the clone so Node's resolution finds Rapier from dsim's files
+without installing into the clone. Determinism check: the recorder was run twice, the second time
+into a scratch directory, and `diff -r` of the two output trees was empty.
+
 ## Licence notice
 
 These fixtures embed dsim constants and outputs. They are derived from dsim by genius0412
