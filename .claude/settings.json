@@ -43,7 +43,8 @@
     "ask": [
       "Agent(orchestrator)",
       "Agent(model:fable)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(gh pr create *)"
     ],
     "deny": [
       "Read(./.env)",
@@ -59,7 +60,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|Read|Glob|Grep",
         "hooks": [
           {
             "type": "command",
@@ -74,6 +75,13 @@
             "timeout": 20,
             "onFailure": "block",
             "statusMessage": "lead guard"
+          },
+          {
+            "type": "command",
+            "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_container.py\"",
+            "timeout": 20,
+            "onFailure": "block",
+            "statusMessage": "container guard"
           }
         ]
       }
