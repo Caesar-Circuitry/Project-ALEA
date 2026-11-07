@@ -18,7 +18,26 @@
       "Bash(git status*)",
       "Bash(git diff*)",
       "Bash(git log*)",
-      "Bash(git branch*)"
+      "Bash(git branch*)",
+      "Bash(git show*)",
+      "Bash(git fetch*)",
+      "Bash(git merge-tree*)",
+      "Bash(git worktree list*)",
+      "Bash(git ls-files*)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr list*)",
+      "Bash(gh pr checks*)",
+      "Bash(gh run list*)",
+      "Bash(gh run view*)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(wc *)",
+      "Bash(shasum *)"
     ],
     "ask": [
       "Agent(orchestrator)",
@@ -63,6 +82,17 @@
             "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/autoformat.py\"",
             "timeout": 60,
             "statusMessage": "formatting"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/session_start.py\"",
+            "timeout": 20
           }
         ]
       }

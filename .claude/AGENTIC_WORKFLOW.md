@@ -16,9 +16,11 @@ named agent applies that agent's `tools` list to the main session, so:
 - `lead`'s `Agent(explorer, implementer, physics-reviewer, verifier, docs-writer, orchestrator)` entry is an
   allowlist. It cannot spawn the built-in Explore or Plan agents (Explore runs on Opus for
   subscription accounts, which is why we keep our own Haiku explorer).
-- `.claude/hooks/guard_lead.py` limits the lead's Bash to checks and read-only git. A shell
-  write (`sed -i`, redirects, `mv`, `rm`, `git commit`) is rejected with a pointer to the right
-  subagent. The hook only acts when the hook input's `agent_type` is `lead`.
+- `.claude/hooks/guard_lead.py` limits the lead's Bash to checks, read-only git (also
+  `git -C <path>`, `show`, `merge-tree`, `ls-files`, `worktree list`), read-only `gh` (`pr view|list|checks|diff`,
+  `run list|view`, `api` GET) and read-only shell commands. It parses each pipeline segment with
+  `shlex`, so quoted `|` and `2>&1` are fine. A shell write (`sed -i`, other redirects, `tee`,
+  `mv`, `rm`, `git commit`) is rejected with a pointer to the right subagent. The hook only acts when the hook input's `agent_type` is `lead`.
 - `lead`'s body is empty on purpose: a non-empty body would replace Claude Code's own system
   prompt. Its instructions come from `CLAUDE.md`, which still loads.
 
@@ -69,7 +71,9 @@ rule or tool list is applied by Claude Code every time. Keep the enforced set sm
 |---|---|---|
 | lead never edits files | `tools` allowlist on the `lead` agent | `.claude/agents/lead.md` |
 | lead's shell is read-only + checks | PreToolUse hook, `agent_type == lead` | `.claude/hooks/guard_lead.py` |
-| frozen physics files | PreToolUse hook, all agents | `.claude/hooks/guard_physics.py` |
+| frozen physics files (real file targets, not command text) | PreToolUse hook, all agents | `.claude/hooks/guard_physics.py` |
+| edited `.py` files get `ruff format` + `ruff check --fix` (never blocks) | PostToolUse hook, `Edit\|Write\|MultiEdit` | `.claude/hooks/autoformat.py` |
+| session summary: branch, `.venv` freshness, golden data, roadmap next, worktrees | SessionStart hook | `.claude/hooks/session_start.py` |
 | implementer finishes green | SubagentStop hook in frontmatter | `.claude/hooks/subagent_gate.py` |
 | Fable only with approval | `permissions.ask` on `Agent(orchestrator)` and `Agent(model:fable)` | `.claude/settings.json` |
 | push asks the user | `permissions.ask: Bash(git push *)` | `.claude/settings.json` |
