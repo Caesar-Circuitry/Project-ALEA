@@ -5,7 +5,7 @@
   "scenario": "config.ts constants the 3D hive reads (BB3_HIVE_*, seat depth, element mass, tilt), plus GRAVITY and SIM_DT",
   "generator": {
     "script": "tests/hifi_traces/record_3d/record_hive3d.mts",
-    "command": "cd /tmp/dsim3d-rec && ./node_modules/.bin/tsx record_hive3d.mts <dsim-clone> <out-dir>   (run through `just dev`)"
+    "command": "just dev /tmp/dsim3d-XXXX/node_modules/.bin/tsx /tmp/dsim3d-XXXX/record_hive3d.mts /tmp/dsim3d-XXXX/src <wt>/tests/hifi_traces/sim3d"
   },
   "inputs": {
     "note": "values read from the loaded modules; BB3_HIVE_DETENT/DAMPING/BALLAST are hive-calibrate outputs"

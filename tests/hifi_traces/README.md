@@ -38,7 +38,7 @@ offered by the recorder and added only if dsim's `hiveAccepts` says yes (that ad
 recorder's, documented in `inputs.launch_rule`). The `kindOf` callback and the RNGs belong to the
 caller in dsim, so the recorder defines them.
 
-## 3D hive traces (`sim3d/`)
+## 3D hive traces (`sim3d/`; recorder in `record_3d/`, its own fresh clone and install, independent of the 2D rerun at the end of this file)
 
 Recorded from dsim's REAL 3D code: `src/games/biobuzz/sim3d/hive3d.ts`, `contacts3d.ts` and the
 deterministic Rapier3d engine layer under them, driven through dsim's own `step3d` at dt = 1/60 s.
@@ -97,15 +97,15 @@ These fixtures embed dsim constants and outputs. They are derived from dsim by g
 (github.com/genius0412/dsim) at the pinned commit and are under PolyForm Noncommercial 1.0.0;
 see `alea/hifi/LICENSE-dsim`. Do not redistribute them outside those terms.
 
-## dsim is untrusted
+## dsim is untrusted (applies to both the 2D and the 3D recorders)
 
-dsim is third-party code under PolyForm Noncommercial. It was checked out inside the `alea-dev`
-container at `/tmp/dsim-src` (no `node_modules`); it was only read and imported there. Never run
+dsim is third-party code under PolyForm Noncommercial. The 2D recorder used a checkout inside the `alea-dev`
+container at `/tmp/dsim-src` (no `node_modules`); the 3D recorder makes its own fresh clone (section below); it was only read and imported there. Never run
 anything with that directory as cwd, never write into it, install nothing with lifecycle scripts
 (`--ignore-scripts`), and run all dsim code through `just dev`. The recorder lives in `record/`,
 not in the dsim tree.
 
-## Rerun
+## Rerun the 2D traces (top-level files above; `record/`, clone at `/tmp/dsim-src`)
 
 Versions used: node v22.17.0 (`just dev node --version`), npm 10.9.2, tsx 4.23.15.
 

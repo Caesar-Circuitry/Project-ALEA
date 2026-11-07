@@ -1,8 +1,8 @@
-"""Clone dsim at the pinned commit into a NEW EMPTY temp directory and install its deps.
+"""Clone dsim at the pinned commit into a NEW temp directory and print the clone path.
 
-Run inside the alea-dev container only (dsim is untrusted). Prints the clone path.
-Usage: python fetch_dsim.py <empty-or-new-parent-dir> [--install]
-The clone is never used as a working directory; npm runs with --prefix and --ignore-scripts.
+Run inside the alea-dev container only (dsim is untrusted). Takes no arguments and installs
+nothing: the npm install (with --ignore-scripts) is a separate command, see ../README.md.
+The clone is never used as a working directory.
 """
 
 import subprocess
@@ -21,9 +21,10 @@ def run(args: list[str], cwd: Path) -> str:
 def main() -> None:
     parent = Path(tempfile.mkdtemp(prefix="dsim3d-"))
     dest = parent / "src"
+    # cwd is the new temp parent, never the clone
     run(["git", "clone", "--quiet", URL, str(dest)], parent)
-    run(["git", "checkout", "--quiet", PIN], dest)
-    head = run(["git", "rev-parse", "HEAD"], dest)
+    run(["git", "-C", str(dest), "checkout", "--quiet", PIN], parent)
+    head = run(["git", "-C", str(dest), "rev-parse", "HEAD"], parent)
     assert head == PIN, head
     print(dest)
 

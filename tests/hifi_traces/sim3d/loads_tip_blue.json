@@ -5,7 +5,7 @@
   "scenario": "step3d trace, blue hive, loads at or above the tip table: 8P, 3P+3N, 1P+4N, 0P+5N (guide packing) and 8P (line2 packing); breakaway, swing, release, tip",
   "generator": {
     "script": "tests/hifi_traces/record_3d/record_hive3d.mts",
-    "command": "cd /tmp/dsim3d-rec && ./node_modules/.bin/tsx record_hive3d.mts <dsim-clone> <out-dir>   (run through `just dev`)"
+    "command": "just dev /tmp/dsim3d-XXXX/node_modules/.bin/tsx /tmp/dsim3d-XXXX/record_hive3d.mts /tmp/dsim3d-XXXX/src <wt>/tests/hifi_traces/sim3d"
   },
   "inputs": {
     "dt_s": 0.016666666666666666,

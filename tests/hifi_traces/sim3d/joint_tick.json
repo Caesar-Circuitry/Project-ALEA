@@ -5,7 +5,7 @@
   "scenario": "hive3dJointTick (hiveDynamicTick) called directly on staged hive states, one call each",
   "generator": {
     "script": "tests/hifi_traces/record_3d/record_hive3d.mts",
-    "command": "cd /tmp/dsim3d-rec && ./node_modules/.bin/tsx record_hive3d.mts <dsim-clone> <out-dir>   (run through `just dev`)"
+    "command": "just dev /tmp/dsim3d-XXXX/node_modules/.bin/tsx /tmp/dsim3d-XXXX/record_hive3d.mts /tmp/dsim3d-XXXX/src <wt>/tests/hifi_traces/sim3d"
   },
   "inputs": {
     "note": "hive_in is the BiobuzzState hive record handed in; elements are staged by fillCell in the up cell; hive.angle undefined means the key is absent"

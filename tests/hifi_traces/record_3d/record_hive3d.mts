@@ -45,7 +45,7 @@ function commit(): string {
 }
 const DSIM_COMMIT = commit();
 const GEN = 'tests/hifi_traces/record_3d/record_hive3d.mts';
-const CMD = 'cd /tmp/dsim3d-rec && ./node_modules/.bin/tsx record_hive3d.mts <dsim-clone> <out-dir>   (run through `just dev`)';
+const CMD = 'just dev /tmp/dsim3d-XXXX/node_modules/.bin/tsx /tmp/dsim3d-XXXX/record_hive3d.mts /tmp/dsim3d-XXXX/src <wt>/tests/hifi_traces/sim3d';
 
 // ---- compact, stable serializer (same style as ../record/record_hive.mjs) ----
 function ser(v: any, depth = 0): string {
@@ -83,7 +83,6 @@ const CONTACTS3D = 'src/games/biobuzz/sim3d/contacts3d.ts';
 const DT = 1 / 60;
 const A = 'blue';
 const REST_RAD = (CFG.BB_HIVE_TILT_DEG * Math.PI) / 180;
-const num = (x: number): number => x; // marker: values straight from dsim
 
 // ---- world staging (the INPUT side; mirrors dsim's own scripts/smoke-biobuzz/hive3d.ts) ----
 function setup(id: number, alliance: string, startIndex = 0): any {
@@ -155,7 +154,6 @@ function loadTrace(alliance: string, pollen: number, nectar: number, packing: Pa
       tips: [], up: [], contents_n: [], spill_n: [], tray_held: [], nectar_due: [],
     };
     const events: [number, string][] = [];
-    const eng0 = EI.engineFor(w);
     let first_tipping_tick: number | null = null;
     let first_released_tick: number | null = null;
     let tip_tick: number | null = null;
@@ -182,7 +180,6 @@ function loadTrace(alliance: string, pollen: number, nectar: number, packing: Pa
       if (first_released_tick === null && h.released) first_released_tick = t;
       if (tip_tick === null && h.tips > 0) tip_tick = t;
     }
-    void eng0;
     const hNow = w.biobuzz.hives[alliance];
     const load = HIVE2D.hiveLoad(hNow.contents, kindOf);
     return {
@@ -253,7 +250,6 @@ function loadTrace(alliance: string, pollen: number, nectar: number, packing: Pa
     for (const th of thetas) restoring_rows.push([alliance, th, H3.hiveRestoringTorque(alliance, th), H3.hiveHoldTorque(alliance, th)]);
   }
   const inside_rows: any[] = [];
-  const wref = withTray(() => mkWorld(12));
   for (const alliance of ['red', 'blue']) {
     const px = BODIES.hivePivotX(alliance);
     for (const side of [1, -1]) {
@@ -270,7 +266,6 @@ function loadTrace(alliance: string, pollen: number, nectar: number, packing: Pa
       }
     }
   }
-  void wref;
   emit('statics3d.json', [HIVE3D], 'pure hive3d functions: hiveContentsTorque (staged guide-packing loads), hiveRestoringTorque, hiveHoldTorque, insideCell', {
     columns: {
       torque_rows: '[alliance, pollen, nectar, theta_rad, hiveContentsTorque(world, alliance, theta)] (world: elements staged by the guide packing, tray at rest, no step)',
@@ -413,4 +408,3 @@ function loadTrace(alliance: string, pollen: number, nectar: number, packing: Pa
     }, { rows });
 }
 console.log('done', DSIM_COMMIT, process.version);
-void num;

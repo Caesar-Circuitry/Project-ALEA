@@ -5,7 +5,7 @@
   "scenario": "hiveContactPass through step3d: 8P tip with the robot parked away vs under the down cell; spill tag count, G409 events, lowest tagged z per tick",
   "generator": {
     "script": "tests/hifi_traces/record_3d/record_hive3d.mts",
-    "command": "cd /tmp/dsim3d-rec && ./node_modules/.bin/tsx record_hive3d.mts <dsim-clone> <out-dir>   (run through `just dev`)"
+    "command": "just dev /tmp/dsim3d-XXXX/node_modules/.bin/tsx /tmp/dsim3d-XXXX/record_hive3d.mts /tmp/dsim3d-XXXX/src <wt>/tests/hifi_traces/sim3d"
   },
   "inputs": {
     "dt_s": 0.016666666666666666,
