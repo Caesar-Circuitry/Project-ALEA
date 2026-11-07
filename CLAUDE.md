@@ -55,6 +55,10 @@ starting a PR.
   Never commit to `main`.
 - The lead runs `just dev-up` before it delegates. `git push` and `gh` run on the host only (the lead, after the user approves).
   New branches: `git switch -c <name> --no-track origin/main`.
+- If Remote Control is connected, send a `PushNotification` to the user's phone when a PR is
+  ready (branch pushed, compare link printed) and when you are blocked on the user's input or a
+  permission (push approval, a question, a denied action). One short line that leads with what to
+  act on. No notifications for routine progress.
 
 ## Commands
 
