@@ -1,0 +1,12 @@
+# The Brev robustness study: 3 x 3 x 2 x 2 x 2 = 72 conditions. The FIRST value of each list is
+# the "normal" robot. Used by `python -m alea.sim.run_study --config conf/study/brev72.yaml`.
+shots: 1000000        # shots per condition
+batch: 1000000        # shots per GPU launch
+seed: 24331
+out: results/study    # git-ignored
+conditions:
+  aim_deg: [1.0, 0.5, 2.0]        # aim error, 1 sigma, degrees
+  speed_pct: [2.0, 1.0, 3.0]      # flywheel speed error, 1 sigma, %
+  robot_ips: [0.0, 10.0]          # robot still moving, inches/second
+  ball_in: [2.8, 2.9]             # pollen diameter, inches
+  bounce: [0.45, 0.60]            # restitution off the hive

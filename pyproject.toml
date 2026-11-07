@@ -72,6 +72,8 @@ select = ["E", "F", "I", "B", "UP", "NPY", "SIM"]
 
 [tool.ruff.lint.per-file-ignores]
 "notebooks/*" = ["E402", "B018"]
+# Ported check scripts: run on the team machine, kept close to the original
+"alea/sim/verification/*" = ["E402", "E501", "E741", "B905", "SIM115"]
 
 [tool.pyright]
 include = ["alea", "tests"]
