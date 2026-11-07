@@ -102,6 +102,21 @@ without writing a rigid-body engine, which this branch does not do.
    algebraic fallback of `hiveCellLocalBox` (not reached with `BB3_FIELD_COLLIDERS` true), and
    the calibration overrides (`__setDetentForCalibration`, the ballast override).
 
+8. **Shared spill map and event order.** In dsim `bb.spill` is one object shared by the red
+   then blue loop of `hiveDynamicTick`, and events are pushed red first. `hive_dynamic_tick` is
+   per alliance and copies the map, so the caller must feed red's returned `spill` into blue's
+   call and keep the red-then-blue event order.
+9. **Readback rounding contract.** `hiveDynamicTick` reads `hive.angle` / `angVel` as rounded to
+   4 decimals by dsim's readback, while the detent reads the unrounded `trayTilt(body)`. The
+   caller must supply each in that form; the port does not round. The replays do so (rounded
+   columns for the tick, full-precision body columns for the detent).
+10. **The `useHiveDynamic()` gate** (`hive3d.ts:487`, which makes `hive3dJointTick` return at
+   once on the kinematic tray) is not modelled. Harmless while `BB3_HIVE_DYNAMIC` is true, which
+   `tests/test_hifi_hive3d_statics.py` asserts.
+11. **NaN.** `min` / `max` in `tippingFromAngle` and `hiveTiltAngle` follow JavaScript (NaN in,
+   NaN out). Other NaN paths (for example `Math.sign(NaN)` comparisons) are not specially
+   tested.
+
 Differences from `alea/game/` listed below still apply to the 3D numbers (the CAD cell boxes
 here are dsim's measurement of its own CAD export). Nothing from `alea/game/` is used.
 

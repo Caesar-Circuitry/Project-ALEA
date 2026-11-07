@@ -1,3 +1,6 @@
+# Ported from dsim by genius0412, commit 62d2446e2ebdf416548fa1641847289bf47cdf36
+# (staging rule copied from scripts/smoke-biobuzz/hive3d.ts).
+# License: PolyForm Noncommercial 1.0.0 (see alea/hifi/LICENSE-dsim).
 """Helpers for replaying the dsim 3D hive traces (tests/hifi_traces/sim3d) through alea.hifi.
 
 Not a test module. `fill_cell` is the TEST-SIDE port of the recorder's staging rule

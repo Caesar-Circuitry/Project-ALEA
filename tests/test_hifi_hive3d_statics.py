@@ -6,6 +6,7 @@ alea/hifi/PORTING.md).
 """
 
 import dataclasses
+import math
 from typing import Any
 
 import pytest
@@ -100,3 +101,10 @@ def test_fresh_hive_tilt_is_signed_rest() -> None:
     assert hive3d.hive_tilt_angle(fresh_hive("blue")) == hive3d.REST_RAD
     assert hive3d.hive_tilt_angle(fresh_hive("red")) == -hive3d.REST_RAD
     assert hive3d.hive_tilt_angle(None) == hive3d.REST_RAD
+
+
+def test_tipping_from_angle_follows_js_nan_and_clamps() -> None:
+    assert math.isnan(hive3d.tipping_from_angle(math.nan, 1))
+    # JS Math.min/max clamp: a tilt beyond the stop gives p = 0 (full 4 s) or the 1e-4 floor
+    assert hive3d.tipping_from_angle(2 * hive3d.REST_RAD, 1) == 4.0
+    assert hive3d.tipping_from_angle(-hive3d.REST_RAD, 1) == 1e-4

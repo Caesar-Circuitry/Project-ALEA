@@ -1,3 +1,5 @@
+// Ported from dsim by genius0412, commit 62d2446e2ebdf416548fa1641847289bf47cdf36 (staging rule copied from
+// scripts/smoke-biobuzz/hive3d.ts). License: PolyForm Noncommercial 1.0.0 (see alea/hifi/LICENSE-dsim).
 // Records dsim 3D hive traces by running dsim's REAL sim3d code (hive3d.ts, contacts3d.ts, and the
 // Rapier3d engine layer under them) through the real step3d pipeline. Usage, inside the alea-dev
 // container, with cwd NOT the dsim clone (see ../README.md for the exact commands):

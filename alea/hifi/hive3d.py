@@ -142,6 +142,20 @@ class JointTickResult:
     spill: dict[int, Alliance] | None
 
 
+def _js_max(a: float, b: float) -> float:
+    """JavaScript `Math.max` of two numbers: NaN if either is NaN (Python's `max` is not)."""
+    if math.isnan(a) or math.isnan(b):
+        return math.nan
+    return b if b > a else a
+
+
+def _js_min(a: float, b: float) -> float:
+    """JavaScript `Math.min` of two numbers: NaN if either is NaN."""
+    if math.isnan(a) or math.isnan(b):
+        return math.nan
+    return b if b < a else a
+
+
 def _sign(x: float) -> float:
     """JavaScript `Math.sign`."""
     if x > 0:
@@ -164,7 +178,7 @@ def hive_tilt_angle(hive: Hive3dState | None) -> float:
     sign = 1 if hive.up == "north" else -1
     if not (hive.tipping > 0):
         return sign * REST_RAD
-    p = min(1, max(0, 1 - hive.tipping / BB_TIP_SWING_S))
+    p = _js_min(1, _js_max(0, 1 - hive.tipping / BB_TIP_SWING_S))
     return sign * REST_RAD * (1 - 2 * p)
 
 
@@ -276,8 +290,8 @@ def stop_angle(sign: float) -> float:
 
 def tipping_from_angle(theta: float, up_sign: float) -> float:
     """The timer's countdown that matches a live angle (hive3d.ts:451)."""
-    p = min(1, max(0, (1 - (up_sign * theta) / REST_RAD) / 2))
-    return max(1e-4, BB_TIP_SWING_S * (1 - p))
+    p = _js_min(1, _js_max(0, (1 - (up_sign * theta) / REST_RAD) / 2))
+    return _js_max(1e-4, BB_TIP_SWING_S * (1 - p))
 
 
 def detent_decision(
@@ -324,6 +338,10 @@ def hive_dynamic_tick(
     dsim's loop body over `ALLIANCES`; call it once per alliance. `body_theta_rad` stands for
     `trayTilt(engine.hiveTrays[a])`, used only when `hive.angle` is undefined. `spill` is
     `bb.spill` (None = undefined); the returned `spill` is a new dict, never the input.
+
+    In dsim `bb.spill` is ONE object shared by the red then blue loop iterations, and events
+    are pushed red first. To match, call red first, feed red's returned `spill` into blue's
+    call, and concatenate the events in that order.
     """
     theta = hive.angle if hive.angle is not None else body_theta_rad
     omega = hive.ang_vel if hive.ang_vel is not None else 0
