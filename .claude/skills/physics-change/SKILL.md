@@ -9,6 +9,11 @@ stop here.
 
 1. **Baseline.** Spawn `physics-reviewer` to record, before anything changes: the output of
    `just selftest`, and `git hash-object alea/sim/shotsim.py alea/sim/study.py`.
+   If `_incoming/alea_project/code/` exists, also record `shasum -a 1` (Windows:
+   `certutil -hashfile <file> SHA1`) of its `shotsim.py`, `study.py` and `golden_shots.npy`
+   next to the repo's `git hash-object` values, the clone's HEAD from
+   `git -C <abs path> rev-parse HEAD`, and say whether the repo copies are byte-identical to the
+   clone.
 2. **Unlock.** Ask the user to add this to `.claude/settings.local.json` (git-ignored) for the
    duration of the change, then remove it afterwards. Settings reload live; no restart needed.
 

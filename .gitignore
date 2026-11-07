@@ -56,8 +56,9 @@ local.properties
 
 # IDE / OS
 .idea/
-.vscode/
+.vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 *.swp
 .DS_Store
 Thumbs.db
@@ -67,4 +68,5 @@ site/
 
 # Claude Code personal files
 .claude/settings.local.json
+.claude/worktrees/
 CLAUDE.local.md

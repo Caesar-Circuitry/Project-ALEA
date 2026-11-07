@@ -62,7 +62,7 @@ packages = ["alea"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-extend-exclude = ["notebooks/*.ipynb", "robot", "hpc"]
+extend-exclude = ["notebooks/*.ipynb", "robot", "hpc", "_incoming", ".claude/worktrees"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "NPY", "SIM"]
@@ -72,6 +72,7 @@ select = ["E", "F", "I", "B", "UP", "NPY", "SIM"]
 
 [tool.pyright]
 include = ["alea", "tests"]
+exclude = ["_incoming", ".claude/worktrees"]
 typeCheckingMode = "basic"
 pythonVersion = "3.12"
 venvPath = "."

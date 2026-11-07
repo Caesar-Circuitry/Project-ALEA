@@ -33,6 +33,48 @@ def settings() -> dict:
     return json.loads((CLAUDE / "settings.json").read_text(encoding="utf-8"))
 
 
+HOOK_PATH = re.compile(r'(\\?")\$CLAUDE_PROJECT_DIR/(\.claude/hooks/[\w.-]+)(\\?")')
+
+
+def hook_script(command: str) -> Path:
+    match = HOOK_PATH.search(command)
+    assert match, f"hook must use a quoted $CLAUDE_PROJECT_DIR path: {command}"
+    return ROOT / match.group(2)
+
+
+def hook_commands() -> list[str]:
+    """Every hook command in settings.json and in the agent frontmatter blocks."""
+    commands: list[str] = []
+
+    def walk(node: object) -> None:
+        if isinstance(node, dict):
+            command = node.get("command")
+            if isinstance(command, str):
+                commands.append(command)
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk(settings().get("hooks", {}))
+    for path in sorted((CLAUDE / "agents").glob("*.md")):
+        match = re.match(r"^---\n(.*?)\n---", path.read_text(encoding="utf-8"), re.S)
+        assert match, f"{path} has no frontmatter"
+        commands += re.findall(r"^\s*(?:-\s*)?command:\s*(.+)$", match.group(1), re.M)
+    return commands
+
+
+def test_hook_commands_use_quoted_project_dir() -> None:
+    hooks = [c for c in hook_commands() if ".claude/hooks/" in c]
+    assert len(hooks) >= 3
+    for command in hooks:
+        match = HOOK_PATH.search(command)
+        assert match, f"hook must use a quoted $CLAUDE_PROJECT_DIR path: {command}"
+        assert match.group(1) == match.group(3)
+        assert hook_script(command).is_file(), command
+
+
 def test_settings_defaults() -> None:
     s = settings()
     assert s["model"] == "sonnet"
@@ -48,8 +90,7 @@ def test_settings_defaults() -> None:
 def test_hooks_point_at_existing_scripts_and_fail_closed() -> None:
     for group in settings()["hooks"]["PreToolUse"]:
         for hook in group["hooks"]:
-            script = hook["command"].split()[-1]
-            assert (ROOT / script).exists(), script
+            assert hook_script(hook["command"]).exists(), hook["command"]
             assert hook.get("onFailure") == "block", "policy hooks must fail closed"
 
 
@@ -62,7 +103,15 @@ def test_lead_is_coordinate_only() -> None:
     allow = re.search(r"Agent\(([^)]*)\)", tools)
     assert allow, "lead must carry an Agent(...) allowlist"
     allowed = {a.strip() for a in allow.group(1).split(",")}
-    assert allowed == {"explorer", "implementer", "physics-reviewer", "docs-writer", "orchestrator"}
+    assert allowed == {
+        "explorer",
+        "implementer",
+        "physics-reviewer",
+        "verifier",
+        "ci-diagnoser",
+        "docs-writer",
+        "orchestrator",
+    }
     assert lead["_body"] == "", "a non-empty body would replace Claude Code's system prompt"
 
 
@@ -73,6 +122,8 @@ def test_agent_models_are_pinned() -> None:
         "explorer",
         "implementer",
         "physics-reviewer",
+        "verifier",
+        "ci-diagnoser",
         "docs-writer",
         "orchestrator",
     }
@@ -82,12 +133,14 @@ def test_agent_models_are_pinned() -> None:
     assert defs["docs-writer"]["model"] == "haiku"
     assert defs["implementer"]["model"] == "sonnet"
     assert defs["physics-reviewer"]["model"] == "opus"
+    assert defs["verifier"]["model"] == "sonnet"
+    assert defs["ci-diagnoser"]["model"] == "opus"
     assert [n for n, f in defs.items() if f["model"] == "fable"] == ["orchestrator"]
 
 
 def test_read_only_agents_have_no_write_tools() -> None:
     defs = agents()
-    for name in ("explorer", "physics-reviewer"):
+    for name in ("explorer", "physics-reviewer", "verifier", "ci-diagnoser"):
         tools = defs[name]["tools"]
         assert "Edit" not in tools and "Write" not in tools, name
 
@@ -100,6 +153,6 @@ def test_implementer_has_stop_gate() -> None:
 
 def test_skills_are_user_invoked_only() -> None:
     skills = list((CLAUDE / "skills").glob("*/SKILL.md"))
-    assert {s.parent.name for s in skills} == {"pr", "physics-change"}
+    assert {s.parent.name for s in skills} == {"pr", "physics-change", "start-pr"}
     for skill in skills:
         assert frontmatter(skill).get("disable-model-invocation") == "true", skill
