@@ -81,6 +81,7 @@ rule or tool list is applied by Claude Code every time. Keep the enforced set sm
 | push asks the user | `permissions.ask: Bash(git push *)` | `.claude/settings.json` |
 | no secrets read | `permissions.deny: Read(./.env)` | `.claude/settings.json` |
 | big files, private keys | pre-commit | `.pre-commit-config.yaml` |
+| no commits on `main` | pre-commit `no-commit-to-branch` | `.pre-commit-config.yaml` |
 | physics review | CODEOWNERS + branch protection | `.github/CODEOWNERS`, decision 0004 |
 
 Everything else (units in names, README per folder, cross-platform habits) is a guideline in
@@ -92,6 +93,7 @@ Everything else (units in names, README per folder, cross-platform habits) is a 
 |---|---|---|
 | `/pr` | user only | forks an `implementer`: checks, commit, push, PR link with template |
 | `/physics-change` | user only | the procedure for an approved change to a frozen file |
+| `/start-pr` | user only | forks an `implementer`: branch from `origin/main` for a ROADMAP stage, `just sync`, prints the done-when list; never commits |
 
 Skills are for multi-step procedures with side effects; `CLAUDE.md` stays short. No MCP servers:
 GitHub goes through `gh` (cheaper in context), and nothing else external is in scope yet.

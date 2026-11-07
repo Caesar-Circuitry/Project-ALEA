@@ -13,7 +13,7 @@ coordinates subagents and never edits files itself.
   checks-only), `subagent_gate.py` (implementer's lint + test gate), `autoformat.py`
   (PostToolUse: ruff on edited `.py` files), `session_start.py` (SessionStart summary).
 - `rules/` — path-scoped guidance that loads only when matching files are touched.
-- `skills/` — `/pr` and `/physics-change`, user-invoked procedures.
+- `skills/` — `/pr`, `/start-pr` and `/physics-change`, user-invoked procedures.
 
 Personal overrides go in `settings.local.json` (git-ignored) or `CLAUDE.local.md` at the root.
 
