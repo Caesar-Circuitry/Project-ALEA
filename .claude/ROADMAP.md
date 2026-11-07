@@ -27,7 +27,7 @@ If `_incoming/` is missing, stop and ask; do not reconstruct the source.
 
 ### 3b: finish CI
 Merged PR 3 runs three runners and has no docs or robot job. Remaining:
-- Add `ubuntu-24.04-arm` and `windows-11-arm` to the matrix (all five targets from
+- Add `ubuntu-24.04-arm` to the matrix (all four targets from
   `[tool.uv].required-environments`). Run pyright once, on ubuntu.
 - `robot` job on `robot/**` changes: Temurin JDK 17, Gradle cache, `./gradlew assembleDebug`.
 - `docs` job: `mkdocs build --strict`, deploy Pages on `main`. Add it in PR 7 if `mkdocs.yml`
@@ -35,7 +35,9 @@ Merged PR 3 runs three runners and has no docs or robot job. Remaining:
 - `.github/workflows/gpu-tests.md`, issue templates (`bug.yml`, `feature.yml`), Gradle in
   Dependabot, `docs/decisions/0004-branch-protection.md`.
 - Merge or close the open Dependabot branches (checkout 7, setup-uv 7, warp-lang 1.19.0).
-- Done when: CI green on all five runners.
+- Done when: CI green on all four runners.
+- Dropped for now: Windows 11 ARM (win32/ARM64). cryptography, pyarrow, protobuf and debugpy
+  lack win_arm64 wheels. Revisit when they ship them.
 
 ### 4: move the sim (physics frozen)
 - Record the SHA-256 of `shotsim.py` and `study.py` in the PR body before anything moves.

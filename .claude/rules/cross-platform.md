@@ -9,7 +9,7 @@ paths:
 
 # Cross-platform code
 
-ALEA runs on macOS, Linux and Windows, on x86-64 and arm64, with no GPU. CI proves it on five
+ALEA runs on macOS, Linux and Windows, on x86-64 and arm64, with no GPU. CI proves it on four
 runners. When you edit code or config:
 
 - Paths through `pathlib`; no hard-coded `/` or `\`; no assumptions about case sensitivity.
