@@ -1,0 +1,117 @@
+@import url("https://fonts.googleapis.com/css2?family=Teko:wght@500;600&display=swap");
+
+:root,
+[data-md-color-scheme="default"] {
+  --ep-black: #000000;
+  --ep-red: #B3161B;
+  --ep-red-bright: #E52B2B;
+  --ep-red-deep: #9E2727;
+  --ep-crimson: #BF1434;
+  --ep-bar-grey: #4C4B4B;
+  --ep-panel: #E8E8E8;
+  --ep-panel-2: #D2D2D2;
+  --ep-gradient: linear-gradient(90deg, var(--ep-red-deep), var(--ep-red-bright));
+
+  /* Material theme hooks */
+  --md-primary-fg-color: var(--ep-black);
+  --md-primary-fg-color--light: var(--ep-bar-grey);
+  --md-primary-fg-color--dark: var(--ep-black);
+  --md-primary-bg-color: #FFFFFF;
+  --md-accent-fg-color: var(--ep-red);
+  --md-typeset-a-color: var(--ep-red);
+}
+
+[data-md-color-scheme="slate"] {
+  --ep-panel: #2A2A2A;
+  --ep-panel-2: #333333;
+  --md-default-bg-color: #121212;
+  --md-typeset-a-color: #FF5A5F;
+}
+
+/* Header: black bar, red underline, display-font site title */
+.md-header { background: var(--ep-black); border-bottom: 4px solid var(--ep-red); }
+.md-header__topic { font-family: "Teko", sans-serif; font-size: 1.35rem; letter-spacing: .02em; text-transform: uppercase; }
+.md-tabs { background: var(--ep-bar-grey); }
+
+/* Page H1 = EP title bar */
+.md-typeset h1 {
+  font-family: "Teko", sans-serif; font-weight: 600; font-size: 2.6rem; line-height: 1;
+  text-transform: uppercase; color: #fff; background: var(--ep-black);
+  margin: 0 0 1rem; padding: .45rem .8rem .2rem;
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.md-typeset h1 .ep-pg { font-size: 1.3rem; color: #fff; opacity: .9; }
+
+/* H2 = grey section bar */
+.md-typeset h2 {
+  background: var(--ep-bar-grey); color: #fff; text-align: center;
+  font-weight: 600; font-size: 1.05rem; letter-spacing: 0;
+  padding: .45rem .8rem; margin: 1.8rem 0 .8rem;
+}
+/* Black variant for Risk / Lessons */
+.md-typeset h2.ep-black { background: var(--ep-black); margin-bottom: 0; }
+
+/* Problem pill */
+.md-typeset .ep-problem {
+  background: var(--ep-gradient); color: #fff;
+  border-radius: 0 999px 999px 0; padding: .8rem 2.2rem .8rem 1rem;
+  font-size: .9rem; line-height: 1.45; margin: 0 0 1.2rem;
+}
+.md-typeset .ep-problem strong { color: #fff; }
+
+/* Risk / Lessons banner body */
+.md-typeset .ep-risk {
+  background: var(--ep-gradient); color: #fff; font-size: .95rem; line-height: 1.5;
+  padding: .9rem 1rem; margin-top: 0;
+}
+.md-typeset .ep-risk strong { color: #fff; }
+
+/* Tables: red header, grey zebra, bold first column */
+.md-typeset table:not([class]) { border: 1px solid #000; font-size: .8rem; }
+.md-typeset table:not([class]) th {
+  background: var(--ep-red); color: #fff; font-weight: 700; text-align: center; font-size: .85rem;
+}
+.md-typeset table:not([class]) td { background: var(--ep-panel); border: 1px solid #555; }
+.md-typeset table:not([class]) tr:nth-child(even) td { background: var(--ep-panel-2); }
+.md-typeset table:not([class]) td:first-child { font-weight: 700; text-align: center; }
+
+/* Figure + caption card */
+.md-typeset .ep-card { margin: 0 0 1.2rem; }
+.md-typeset .ep-card img { display: block; width: 100%; background: #fff; }
+.md-typeset .ep-card .ep-caption {
+  background: var(--ep-panel); text-align: center; padding: .7rem 1rem; font-size: .85rem; line-height: 1.45;
+}
+
+/* Math callout */
+.md-typeset .ep-math { text-align: center; color: var(--ep-red); font-weight: 700; font-size: 1.15rem; margin: .6rem 0; }
+
+/* Big-number stat strip */
+.md-typeset .ep-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .5rem; margin: 1rem 0; }
+.md-typeset .ep-stat { background: var(--ep-panel); text-align: center; padding: .6rem; border-top: 4px solid var(--ep-red); }
+.md-typeset .ep-stat b { display: block; font-family: "Teko", sans-serif; font-size: 2rem; line-height: 1; color: var(--ep-red); }
+
+/* Two-column EP grid (stacks on phones) */
+.md-typeset .ep-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 1rem; align-items: start; }
+@media (max-width: 760px) { .md-typeset .ep-grid { grid-template-columns: 1fr; } }
+
+/* Optional gold "Innovative" corner tag */
+.md-typeset .ep-ribbon { position: relative; overflow: hidden; }
+.md-typeset .ep-ribbon::before {
+  content: "Innovative"; position: absolute; top: 14px; left: -34px; transform: rotate(-45deg);
+  background: linear-gradient(90deg,#B8860B,#F5D27A,#B8860B); color: #3a2a00;
+  font-weight: 700; font-size: .7rem; padding: .15rem 2.4rem; z-index: 1;
+}
+
+/* Inline emphasis matches the EP: bold black, with key numbers optionally red */
+.md-typeset .ep-hl { color: var(--ep-red); font-weight: 700; }
+
+/* Phones: smaller title bar so the team number stays on the line */
+@media (max-width: 760px) {
+  .md-typeset h1 { font-size: 1.9rem; flex-wrap: wrap; }
+  .md-typeset h1 .ep-pg { font-size: 1rem; }
+}
+
+/* Dark mode: the EP red is too dim on dark grey, so lift stat numbers and the equation */
+[data-md-color-scheme="slate"] .md-typeset .ep-stat b,
+[data-md-color-scheme="slate"] .md-typeset .ep-math,
+[data-md-color-scheme="slate"] .md-typeset .ep-hl { color: #FF5A5F; }

@@ -3,6 +3,33 @@ site_description: Strategy analysis platform of FTC team 24331 Caesar Circuitry
 repo_url: https://github.com/Caesar-Circuitry/Project-ALEA
 theme:
   name: material
+  font:
+    text: Open Sans
+    code: JetBrains Mono
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - content.code.copy
+extra_css:
+  - stylesheets/ep.css
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - admonition
+  - pymdownx.details
+  - tables
 nav:
   - Home: README.md
   - Summary: summary.md
