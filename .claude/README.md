@@ -3,6 +3,7 @@
 Claude Code configuration for this repo. Every session here runs as the `lead` agent, which
 coordinates subagents and never edits files itself.
 
+- `ROADMAP.md` — setup PR status, what each PR delivers, the project phases after setup.
 - `AGENTIC_WORKFLOW.md` — the model tiers, the standard loop, what is enforced vs requested.
 - `settings.json` — default model (Sonnet), `agent: lead`, permission rules (Fable spawns and
   `git push` ask; `.env` is unreadable), and the two guard hooks.

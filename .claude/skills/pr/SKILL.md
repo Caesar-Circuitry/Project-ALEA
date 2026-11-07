@@ -14,7 +14,8 @@ Ship the current branch as a pull request. Work in this order and stop at the fi
 3. `just lint` and `just test`. If anything under `alea/sim/` or `alea/game/` changed on this
    branch (`git diff --name-only main...HEAD`), also `just selftest`. If `docs/` or `mkdocs.yml`
    changed, `just docs`. If `robot/` changed, `just robot` (skip with a note if no JDK 17).
-4. Commit what is left in small logical commits. Messages: imperative first line under 72
+4. If this branch completes a row in `.claude/ROADMAP.md`, set that row to "merged" once the
+   user merges it, or note it in the PR body so the next session does. Commit what is left in small logical commits. Messages: imperative first line under 72
    characters, a blank line, then why. End with the attribution line the repo uses.
 5. `git push -u origin <branch>`. This prompts the user; that is expected.
 6. Print:

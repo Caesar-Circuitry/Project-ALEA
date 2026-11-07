@@ -22,6 +22,8 @@ subagents, each pinned to a model:
 
 One subagent per task, worktree isolation when two run at once, short summaries back.
 The full policy, including when to escalate a model, is in `.claude/AGENTIC_WORKFLOW.md`.
+The PR stages, what is done and what is next are in `.claude/ROADMAP.md`; read it before
+starting a PR.
 
 ## Rules Claude Code enforces (hooks and permission rules)
 
