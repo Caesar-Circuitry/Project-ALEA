@@ -39,14 +39,14 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project python .claude/hooks/guard_physics.py",
+            "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_physics.py\"",
             "timeout": 20,
             "onFailure": "block",
             "statusMessage": "physics guard"
           },
           {
             "type": "command",
-            "command": "uv run --no-project python .claude/hooks/guard_lead.py",
+            "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_lead.py\"",
             "timeout": 20,
             "onFailure": "block",
             "statusMessage": "lead guard"

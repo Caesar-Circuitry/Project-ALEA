@@ -6,7 +6,7 @@ hooks:
   Stop:
     - hooks:
         - type: command
-          command: uv run --no-project python .claude/hooks/subagent_gate.py
+          command: uv run --no-project python "$CLAUDE_PROJECT_DIR/.claude/hooks/subagent_gate.py"
           timeout: 900
           statusMessage: "implementer gate: lint + tests"
 ---
