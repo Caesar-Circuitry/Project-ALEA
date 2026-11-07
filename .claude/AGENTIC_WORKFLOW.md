@@ -27,6 +27,21 @@ named agent applies that agent's `tools` list to the main session, so:
 The lead's job each turn: understand, plan (plan mode for multi-file work), spawn, collect,
 verify with `just lint` / `just test` / `just selftest`, report with evidence.
 
+### Shell sandbox
+
+Every agent except the lead runs its shell work in the dev container `alea-dev`
+(`docs/decisions/0006-agent-sandbox.md`).
+
+- Non-lead agents run commands as `just dev <cmd>` or `docker exec alea-dev <cmd>`. For `&&`,
+  `;` or `|`, use `just dev bash -c '...'`. `guard_container.py` blocks any other shell command.
+- The lead runs `just dev-up` on the host before it delegates. It runs `just dev-status` to check.
+- `git push` and `gh` run on the host only, by the lead after the user approves each. The container has no push credentials.
+- Create branches with `git switch -c <name> --no-track origin/main`. Tracking writes to the
+  read-only `.git/config`.
+- If `just dev` says a read-only overlay is gone, the host rewrote `.git/config` or `.env`. The
+  user runs `just dev-down` and then `just dev-up`.
+- Edits still use the host's file tools. The hook keeps them inside the repo.
+
 ## 2. Model tiers by problem type
 
 | Tier | Model | Agent | Use for |
@@ -69,8 +84,8 @@ Rules:
    `just docs` after docs changes; `just robot` after `robot/` changes. Quote the output. For a whole branch the lead also spawns
    `verifier` (fresh context, read-only) before `/pr`, and still runs the quick checks itself.
 5. **Review** with `physics-reviewer` for frozen paths, `/code-review` otherwise.
-6. **Ship** with `/pr`: a forked `implementer` runs the checks, commits, pushes (asks first) and
-   prints the compare link with the PR template filled in. If CI fails on the pushed branch,
+6. **Ship** with `/pr`: `implementer` runs the checks and commits in the container; the lead
+   then pushes and runs `gh pr create` on the host (each asks first) and prints the PR URL. If CI fails on the pushed branch,
    spawn `ci-diagnoser` (read-only, Opus) to classify the failure and propose the fix, then hand
    the fix to `implementer`. Humans merge.
 
@@ -83,12 +98,14 @@ rule or tool list is applied by Claude Code every time. Keep the enforced set sm
 |---|---|---|
 | lead never edits files | `tools` allowlist on the `lead` agent | `.claude/agents/lead.md` |
 | lead's shell is read-only + checks | PreToolUse hook, `agent_type == lead` | `.claude/hooks/guard_lead.py` |
+| other agents' shell runs in `alea-dev`; file edits stay in the repo | PreToolUse hook, every agent but lead | `.claude/hooks/guard_container.py` |
+| no push credentials in the sandbox | no mounts, no credential helper | `.devcontainer/cpu/`, decision 0006 |
 | frozen physics files (real file targets, not command text) | PreToolUse hook, all agents | `.claude/hooks/guard_physics.py` |
 | edited `.py` files get `ruff format` + `ruff check --fix` (never blocks) | PostToolUse hook, `Edit\|Write\|MultiEdit` | `.claude/hooks/autoformat.py` |
 | session summary: branch, `.venv` freshness, golden data, roadmap next, worktrees | SessionStart hook | `.claude/hooks/session_start.py` |
 | implementer finishes green | SubagentStop hook in frontmatter | `.claude/hooks/subagent_gate.py` |
 | Fable only with approval | `permissions.ask` on `Agent(orchestrator)` and `Agent(model:fable)` | `.claude/settings.json` |
-| push asks the user | `permissions.ask: Bash(git push *)` | `.claude/settings.json` |
+| push and PR creation ask the user | `permissions.ask: Bash(git push *)`, `Bash(gh pr create *)` | `.claude/settings.json` |
 | no secrets read | `permissions.deny: Read(./.env)` | `.claude/settings.json` |
 | big files, private keys | pre-commit | `.pre-commit-config.yaml` |
 | no commits on `main` | pre-commit `no-commit-to-branch` | `.pre-commit-config.yaml` |
@@ -101,7 +118,7 @@ Everything else (units in names, README per folder, cross-platform habits) is a 
 
 | Skill | Invoked by | Does |
 |---|---|---|
-| `/pr` | user only | forks an `implementer`: checks, commit, push, PR link with template |
+| `/pr` | user only | lead context: `implementer` checks and commits, lead pushes and runs `gh pr create` |
 | `/physics-change` | user only | the procedure for an approved change to a frozen file |
 | `/start-pr` | user only | forks an `implementer`: branch from `origin/main` for a ROADMAP stage, `just sync`, prints the done-when list; never commits |
 
@@ -131,5 +148,5 @@ and `justfile` edits. They cost nothing until needed.
 
 - `/status` shows `@lead` in the startup header and lists `Project settings` under sources.
 - Ask the lead to edit a file: it should spawn `implementer` or say it has no Edit tool.
-- `uv run pytest tests/test_claude_config.py tests/test_guard_hook.py` checks the config shape,
-  the model pins and both guard hooks.
+- `uv run pytest tests/test_claude_config.py tests/test_guard_hook.py tests/test_guard_container.py`
+  checks the config shape, the model pins and the guard hooks.

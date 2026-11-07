@@ -89,6 +89,7 @@ def test_settings_defaults() -> None:
     assert "Agent(orchestrator)" in ask
     assert "Agent(model:fable)" in ask
     assert "Bash(git push *)" in ask
+    assert "Bash(gh pr create *)" in ask
     deny = s["permissions"]["deny"]
     assert "Read(./.env)" in deny
     assert "Bash(cat .env)" in deny  # `Bash(cat *)` is allowed, so .env needs its own deny
