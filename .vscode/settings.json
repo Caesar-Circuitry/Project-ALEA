@@ -1,0 +1,12 @@
+{
+  "python.analysis.exclude": ["**/_incoming/**", "**/.claude/worktrees/**"],
+  "java.import.exclusions": ["**/_incoming/**", "**/.claude/worktrees/**"],
+  "files.watcherExclude": {
+    "**/_incoming/**": true,
+    "**/.claude/worktrees/**": true
+  },
+  "search.exclude": {
+    "**/_incoming/**": true,
+    "**/.claude/worktrees/**": true
+  }
+}

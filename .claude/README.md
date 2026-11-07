@@ -17,4 +17,10 @@ coordinates subagents and never edits files itself.
 
 Personal overrides go in `settings.local.json` (git-ignored) or `CLAUDE.local.md` at the root.
 
+Two folders are ignored by tools on purpose: `_incoming/` (the copied source from the old
+project: Python, `AimDump.java`, `ShotDump.java`, robot Java; deleted in setup PR 8) and
+`.claude/worktrees/` (full copies of the project made for parallel agents; clean up with
+`just worktree-prune`). Ruff, pyright, VS Code (Python, Java, search, file watcher; see
+`.vscode/settings.json`) and git skip them. They stay visible in the explorer.
+
 **Roadmap phase:** all
