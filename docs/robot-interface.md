@@ -4,7 +4,7 @@ What a robot must log so ALEA can read it. This file is the source of truth:
 `tests/test_robot_contract.py` fails if the Java under `robot/` and this table disagree.
 See [decision 0002](decisions/0002-robot-contract.md).
 
-**Roadmap phase:** Phase 0 (contract), filled in PR 5. The importers that read these keys come in PR 6.
+**Roadmap phase:** Phase 0 (contract), filled in PR 5. The importers that read these keys landed in PR 6 (`alea/data/`).
 
 ## Logging stack
 

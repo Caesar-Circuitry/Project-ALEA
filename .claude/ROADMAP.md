@@ -16,8 +16,8 @@ Last updated: 2026-11-07.
 | 3b | `setup/03b-ci-complete` | Finish PR 3, see below | merged (#8): four runners, Windows 11 ARM dropped; Dependabot PRs resolved 2026-11-07 (#4, #5, #10, #11 merged; #6, #9 closed; Gradle pinned to v5 in #17) | |
 | 4 | `setup/04-move-sim` | Move the shot sim in, physics frozen | merged (#16) | |
 | 5 | `setup/05-robot-contract` | `docs/robot-interface.md`, sample robot, contract test | merged (#19) | |
-| 6 | `setup/06-data-importers` | SQLAlchemy models, `.rlog` reader, `.wpilog` reader | **next** | |
-| 7a | `setup/07a-devcontainer` | CPU dev container, agent shell sandbox, guard_container hook, decision 0006 | **in review** | |
+| 6 | `setup/06-data-importers` | SQLAlchemy models, `.rlog` reader, `.wpilog` reader | merged (#24) | |
+| 7a | `setup/07a-devcontainer` | CPU dev container, agent shell sandbox, guard_container hook, decision 0006 | merged (#23) | |
 | 7 | `setup/07-dev-env-docs` | Dev containers, `hpc/`, MkDocs site, notebook, README | todo | `_incoming/` docs text |
 | 8 | `setup/08-hifi-stub` | `alea/hifi` stub, `fidelity` switch, decision 0005, delete `_incoming/` | todo | PR 4 |
 
