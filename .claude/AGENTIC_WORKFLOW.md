@@ -33,7 +33,7 @@ verify with `just lint` / `just test` / `just selftest`, report with evidence.
 |---|---|---|---|
 | 0 | Haiku | `explorer`, `docs-writer` | lookups, renames, READMEs, decision records, commit text, CSV/log parsing scripts |
 | 1 | Sonnet | `lead`, `implementer`, `verifier`, unlabeled spawns | planning, coordination, tests, importers, CI YAML, models, Streamlit, notebooks, non-physics refactors |
-| 2 | Opus | `physics-reviewer`, `ci-diagnoser`; `/model opus` for a session | anything under `alea/sim`, `alea/game`, `alea/hifi`, `tests/golden`; `/code-review`; CI failure diagnosis; the dsim port; Warp kernels |
+| 2 | Opus | `physics-reviewer`, `ci-diagnoser`, `auditor`; `/model opus` for a session | anything under `alea/sim`, `alea/game`, `alea/hifi`, `tests/golden`; `/code-review`; CI failure diagnosis; the dsim port; Warp kernels |
 | 3 | Fable | `orchestrator` only | complex multi-agent, multi-PR work the user has explicitly approved for Fable |
 
 The project also sets `advisorModel: opus` in `.claude/settings.json`. This is Claude Code's
@@ -48,6 +48,10 @@ Rules:
   pinned model. It is not forced, so agent frontmatter still wins.
 - Spawning `orchestrator` triggers a permission prompt (`permissions.ask: Agent(orchestrator)`),
   as does any spawn that passes `model: fable`. That prompt is the Fable gate.
+- Periodic audit: run `/audit` weekly or at the end of each roadmap phase. The `auditor` is
+  read-only (no Edit or Write) and reports findings on current practices, security and common
+  AI mistakes; the user decides what to file or fix. It starts on Opus. Escalate it to Fable
+  only if audits repeatedly miss issues the team later finds, and only with the user's approval.
 - Effort stays at the model default (`medium`). Raise it per session with `/effort high` for a
   tricky physics bug; never leave it high for routine work.
 
