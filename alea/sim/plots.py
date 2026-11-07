@@ -4,7 +4,6 @@ heatmap_worst.png  : the condition with the lowest score rate
 effects.png        : how much each variable changes the score rate (averaged over the others)
 """
 
-import csv
 import sys
 from pathlib import Path
 
@@ -15,6 +14,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
+from alea.sim import results
 from alea.sim.shotsim import FIELD
 from alea.sim.study import CELL, TARGET_X, TARGET_Y, Y_MAX
 
@@ -67,34 +67,17 @@ def heatmap(z, title, fn):
 
 def main(out: str | Path = "results/study"):
     out = Path(out)
-    with (out / "summary.csv").open(newline="", encoding="utf-8") as fh:
-        rows = [{k: float(v) for k, v in r.items()} for r in csv.DictReader(fh)]
+    rows = results.load_summary(out)
 
-    def name(r):
-        return (
-            f"aim {r['aim_deg']:g} deg, speed {r['speed_pct']:g}%, moving {r['robot_ips']:g} in/s, "
-            f"ball {r['ball_in']:g} in, bounce {r['bounce']:g}: "
-            f"{r['pct_scored_of_fired']:.1f}% scored"
-        )
-
-    worst = min(rows, key=lambda r: r["pct_scored_of_fired"])
+    worst = results.worst_best(rows, 1)[0][0]
     for r, fn in [(rows[0], "heatmap_normal.png"), (worst, "heatmap_worst.png")]:
-        heatmap(np.load(out / f"cond_{int(r['id']):03d}.npz"), name(r), out / fn)
+        heatmap(np.load(out / f"cond_{int(r['id']):03d}.npz"), results.describe(r), out / fn)
 
-    groups = [
-        (label, key, sorted({r[key] for r in rows}))
-        for label, key in [
-            ("aim error (deg)", "aim_deg"),
-            ("flywheel speed error (%)", "speed_pct"),
-            ("robot moving (in/s)", "robot_ips"),
-            ("ball size (in)", "ball_in"),
-            ("ball bounce", "bounce"),
-        ]
-    ]
+    groups = list(results.factor_effects(rows).items())
     fig, axs = plt.subplots(1, len(groups), figsize=(14, 3.6), dpi=150, sharey=True)
-    for ax, (label, key, vals) in zip(axs, groups, strict=True):
-        vals = sorted(vals)
-        m = [float(np.mean([r["pct_scored_of_fired"] for r in rows if r[key] == v])) for v in vals]
+    for ax, (label, effect) in zip(axs, groups, strict=True):
+        vals = [v for v, _ in effect]
+        m = [pct for _, pct in effect]
         ax.bar([f"{v:g}" for v in vals], m, color="#b3161b")
         for i, v in enumerate(m):
             ax.text(i, v + 1, f"{v:.0f}%", ha="center", fontsize=9)
