@@ -1,7 +1,5 @@
 """The PostToolUse auto-format hook formats edited .py files and leaves everything else alone."""
 
-from __future__ import annotations
-
 import json
 import os
 import subprocess

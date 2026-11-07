@@ -3,8 +3,11 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
+      # hive_frame.b64 is frozen physics data (hash-pinned in tests/test_frozen_files.py)
       - id: trailing-whitespace
+        exclude: ^alea/sim/hive_frame\.b64$
       - id: end-of-file-fixer
+        exclude: ^alea/sim/hive_frame\.b64$
       - id: check-yaml
       - id: check-toml
       - id: check-added-large-files

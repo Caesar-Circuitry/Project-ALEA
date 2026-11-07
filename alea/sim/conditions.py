@@ -6,20 +6,29 @@ study. The FIRST value in each list is the "normal" robot.
   aim_deg    : aim error, 1 standard deviation, degrees (auto-aim settles within 1 deg)
   speed_pct  : flywheel speed error at the shot, 1 standard deviation, % (PIDF, battery)
   robot_ips  : robot still moving when it shoots, inches/second, random direction
-  ball_in    : pollen diameter, inches (2.8 = game manual)
-  bounce     : how bouncy the ball is off the hive (restitution; 0.45 = sim default)
+  ball_in    : pollen diameter, inches (first value = game manual, alea.game.biobuzz)
+  bounce     : how bouncy the ball is off the hive (restitution; first value = sim default)
+
+The key `robot_ips` keeps its name because the frozen study.py reads `cond["robot_ips"]`.
+tests/test_conditions.py checks these defaults against conf/study/brev72.yaml.
 """
 
 import itertools
 
+from alea.game.biobuzz import HIVE_RESTITUTION, POLLEN_RADIUS_IN
+
 AIM_DEG = [1.0, 0.5, 2.0]
 SPEED_PCT = [2.0, 1.0, 3.0]
-ROBOT_IPS = [0.0, 10.0]
-BALL_IN = [2.8, 2.9]
-BOUNCE = [0.45, 0.60]
+ROBOT_SPEED_IN_S = [0.0, 10.0]
+BALL_DIAMETER_IN = [2 * POLLEN_RADIUS_IN, 2.9]
+BOUNCE = [HIVE_RESTITUTION, 0.60]
 
 DEFAULTS = dict(
-    aim_deg=AIM_DEG, speed_pct=SPEED_PCT, robot_ips=ROBOT_IPS, ball_in=BALL_IN, bounce=BOUNCE
+    aim_deg=AIM_DEG,
+    speed_pct=SPEED_PCT,
+    robot_ips=ROBOT_SPEED_IN_S,
+    ball_in=BALL_DIAMETER_IN,
+    bounce=BOUNCE,
 )
 
 

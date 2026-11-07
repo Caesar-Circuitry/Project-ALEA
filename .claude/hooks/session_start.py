@@ -5,8 +5,7 @@ number of agent worktrees. Never fails the session: any error is swallowed and t
 Pure stdlib.
 """
 
-from __future__ import annotations
-
+import itertools
 import os
 import subprocess
 import sys
@@ -53,7 +52,7 @@ def count_agent_worktrees(porcelain: str) -> int:
         if not line.startswith("worktree "):
             continue
         parts = Path(line[len("worktree ") :].strip()).parts
-        pairs = zip(parts, parts[1:], strict=False)
+        pairs = itertools.pairwise(parts)
         if (".claude", "worktrees") in pairs:
             count += 1
     return count

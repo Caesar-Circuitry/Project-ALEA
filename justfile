@@ -1,6 +1,6 @@
 # ALEA task runner. Install `just`: brew install just | winget install Casey.Just | cargo install just
 # Every recipe is a single shell-neutral command; the raw commands are also listed in README.md.
-set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
+set windows-shell := ["pwsh", "-NoLogo", "-NoProfile", "-Command"]
 
 default:
     @just --list
@@ -38,8 +38,14 @@ docs-serve:
     uv run mkdocs serve
 
 # Build the sample robot code (needs JDK 17 + Android SDK)
+[unix]
 robot:
     cd robot && ./gradlew assembleDebug
+
+# Build the sample robot code (needs JDK 17 + Android SDK)
+[windows]
+robot:
+    cd robot; .\gradlew.bat assembleDebug
 
 # Remove clean agent worktrees under .claude/worktrees/ and their merged worktree-agent-* branches
 worktree-prune:

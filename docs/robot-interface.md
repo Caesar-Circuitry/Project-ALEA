@@ -8,7 +8,7 @@ See [decision 0002](decisions/0002-robot-contract.md).
 
 ## Logging stack
 
-Robots log with [PsiKit](https://github.com/psilynx-ftc/psikit) (`org.psilynx.psikit:core` and
+Robots log with [PsiKit](https://github.com/PsiLynx/PsiKit) (`org.psilynx.psikit:core` and
 `:ftc`, version 0.2.0), which writes RLOG files (`/sdcard/FIRST/PsiKit/`) and can stream them
 live (port 5800). Values are written with `Logger.recordOutput(key, value)`; constants that do
 not change during a match are written once with `Logger.recordMetadata(key, value)`.

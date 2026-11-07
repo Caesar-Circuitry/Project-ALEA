@@ -16,6 +16,9 @@ TOL = 1e-6
 KEY_CALL = re.compile(r"Logger\.(recordOutput|recordMetadata)\(\s*(\"[^\"]*\"|[^\"\s][^,]*)")
 DOC_KEY = re.compile(r"^\|\s*`([^`]+)`\s*\|", re.MULTILINE)
 CONSTANT = re.compile(r"public static final (?:double|int|long)\s+(\w+)\s*=\s*(-?[\d.]+)\s*;")
+ARRAY = re.compile(
+    r"public static final (?:double|int|long)\[\]\s+(\w+)\s*=\s*\{([^}]*)\}\s*;", re.DOTALL
+)
 
 
 def java_sources() -> list[Path]:
@@ -38,11 +41,19 @@ def doc_keys() -> set[str]:
     return {k for k in DOC_KEY.findall(DOC.read_text(encoding="utf-8")) if k.startswith("Alea/")}
 
 
+def constants_java() -> str:
+    return next(p for p in java_sources() if p.name == "Constants.java").read_text(encoding="utf-8")
+
+
 def java_constants() -> dict[str, float]:
-    text = (next(p for p in java_sources() if p.name == "Constants.java")).read_text(
-        encoding="utf-8"
-    )
-    return {name: float(value) for name, value in CONSTANT.findall(text)}
+    return {name: float(value) for name, value in CONSTANT.findall(constants_java())}
+
+
+def java_arrays() -> dict[str, tuple[float, ...]]:
+    return {
+        name: tuple(float(v) for v in body.split(",") if v.strip())
+        for name, body in ARRAY.findall(constants_java())
+    }
 
 
 def test_java_has_keys() -> None:
@@ -74,10 +85,24 @@ def test_java_constants_match_game_values() -> None:
     }
     for name, expected in exact.items():
         assert c[name] == pytest.approx(expected, abs=TOL), name
-    # The two mouth y values are rounded CAD numbers (0.01 in) that sit
-    # symmetrically about the hive pivot y.
-    mid = (c["HIVE_AUDIENCE_MOUTH_Y_IN"] + c["HIVE_REAR_MOUTH_Y_IN"]) / 2
-    assert mid == pytest.approx(biobuzz.HIVE_Y_IN, abs=0.01)
+
+
+def test_java_mouth_and_aim_match_game_values() -> None:
+    c = java_constants()
+    exact = {
+        "HIVE_AUDIENCE_MOUTH_Y_IN": biobuzz.HIVE_AUDIENCE_MOUTH_Y_IN,
+        "HIVE_REAR_MOUTH_Y_IN": biobuzz.HIVE_REAR_MOUTH_Y_IN,
+        "AIM_MAX_OFF_AXIS_DEG": biobuzz.AIM_MAX_OFF_AXIS_DEG,
+    }
+    for name, expected in exact.items():
+        assert c[name] == pytest.approx(expected, abs=TOL), name
+
+
+@pytest.mark.parametrize("name", ["LUT_DISTANCE_IN", "LUT_TICKS_PER_SEC"])
+def test_java_lut_matches_game_values(name: str) -> None:
+    arrays = java_arrays()
+    assert name in arrays, f"{name} not found in Constants.java"
+    assert arrays[name] == pytest.approx(getattr(biobuzz, name), abs=TOL), name
 
 
 def test_start_pose_is_on_the_field() -> None:

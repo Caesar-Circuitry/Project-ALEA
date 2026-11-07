@@ -47,7 +47,7 @@ def parse_args(argv=None):
 
 def main(argv=None):
     a = parse_args(argv)
-    with open(a.config, encoding="utf-8") as fh:
+    with Path(a.config).open(encoding="utf-8") as fh:
         cfg = yaml.safe_load(fh) or {}
     shots = int(a.shots if a.shots is not None else cfg.get("shots", 1e6))
     batch = int(a.batch if a.batch is not None else cfg.get("batch", 1e6))
@@ -75,9 +75,12 @@ def main(argv=None):
     t0 = time.time()
     st.run(conds[0], n, seed=0, batch=batch)
     wp.synchronize()
-    rate = n / (time.time() - t0)
-    eta = shots * len(conds) / rate
-    print(f"speed: {rate:,.0f} shots/s  ->  estimated {eta / 60:.1f} min for the whole study")
+    rate_shots_s = n / (time.time() - t0)
+    eta_s = shots * len(conds) / rate_shots_s
+    eta_min = eta_s / 60
+    print(
+        f"speed: {rate_shots_s:,.0f} shots/s  ->  estimated {eta_min:.1f} min for the whole study"
+    )
     if a.plan:
         for c in conds:
             print(c)
@@ -120,7 +123,7 @@ def main(argv=None):
                 plus_minus_95=round(100 * ci, 2),
             )
         )
-    with open(out / "summary.csv", "w", newline="") as fh:
+    with (out / "summary.csv").open("w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0]))
         w.writeheader()
         w.writerows(rows)

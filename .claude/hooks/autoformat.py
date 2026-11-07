@@ -7,8 +7,6 @@ one-line warning and the edit stays. Always exits 0. Pure stdlib.
 `ALEA_RUFF_PYTHON` (tests only) swaps `uv run ruff` for `<that python> -m ruff`.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import subprocess

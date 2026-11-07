@@ -20,17 +20,22 @@ wp.config.quiet = True  # pyright: ignore[reportAttributeAccessIssue]
 GOLDEN = Path(__file__).resolve().parents[2] / "tests" / "golden" / "golden_shots.npy"
 
 
-def main(device=None):
-    ok = True
+def golden_agreement(sim):
+    """Share of the golden Java shots the kernel reproduces exactly, and the shot count."""
     g = np.load(GOLDEN)
-    sim = ShotSim(device)
-    print(f"device: {sim.device}")
     got = np.empty(len(g), dtype=int)
     for dia, e in sorted({(r[6], r[7]) for r in g}):
         m = (g[:, 6] == dia) & (g[:, 7] == e)
         got[m] = sim.run(g[m, 0], g[m, 1], g[m, 2], g[m, 3], g[m, 4], g[m, 5], dia / 2, e)
-    agree = (got == g[:, 8].astype(int)).mean()
-    print(f"[1] physics vs Java sim: {agree:.3%} of {len(g):,} shots agree (need >= 99.9%)")
+    return float((got == g[:, 8].astype(int)).mean()), len(g)
+
+
+def main(device=None):
+    ok = True
+    sim = ShotSim(device)
+    print(f"device: {sim.device}")
+    agree, n_golden = golden_agreement(sim)
+    print(f"[1] physics vs Java sim: {agree:.3%} of {n_golden:,} shots agree (need >= 99.9%)")
     ok &= agree >= 0.999
 
     st = Study(sim.device)

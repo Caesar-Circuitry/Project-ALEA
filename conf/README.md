@@ -1,6 +1,7 @@
-# conf (Hydra configs)
+# conf (study configs)
 
-Hydra configuration: study definitions under `conf/study/`, paths and fidelity settings.
+YAML configuration. Study definitions live under `conf/study/` and are read with PyYAML
+(`yaml.safe_load`). Hydra is not a dependency. The `fidelity` switch arrives in PR 8.
 
 - `study/`: study definitions read by `python -m alea.sim.run_study --config`.
 

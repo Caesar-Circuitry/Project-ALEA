@@ -55,3 +55,17 @@ LAUNCH_EXIT_X_IN = -6.1  # source: alea/sim/shotsim.py:61 EXIT_X (robot frame, o
 LAUNCH_EXIT_Z_IN = 8.5  # source: alea/sim/shotsim.py:61 EXIT_Z
 # flywheel ticks/s -> ball in/s
 TICKS_TO_IN_S = 1.0 / 28 * 2 * math.pi * 1.89 * 0.45  # source: alea/sim/shotsim.py:62
+
+# --- robot aim (StarterBot constants.java / aimAssist.java, copied into the frozen study.py)
+# Raised-cell mouth y: audience-side cell up (red hive's target), rear cell up (the mirror of the
+# audience mouth about HIVE_Y_IN). robot/.../Constants.java carries the same values.
+HIVE_AUDIENCE_MOUTH_Y_IN = 54.47  # source: alea/sim/study.py:22 TARGET_Y
+HIVE_REAR_MOUTH_Y_IN = 87.03  # source: Constants.java:30 (= 2 * HIVE_Y_IN - audience mouth)
+AIM_MAX_OFF_AXIS_DEG = 80.0  # source: alea/sim/study.py:24 MAX_OFF_AXIS (in degrees)
+# The launch LUT: launcher-exit-to-mouth distance -> flywheel ticks/s (unverified on the robot)
+# source: alea/sim/study.py:25 LUT_DISTANCE_IN
+LUT_DISTANCE_IN = (24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80)
+# source: alea/sim/study.py:26 LUT_TICKS_PER_SEC
+LUT_TICKS_PER_SEC = (
+    1180, 1110, 1100, 1100, 1120, 1140, 1160, 1180, 1200, 1230, 1260, 1290, 1310, 1340, 1360,
+)  # fmt: skip

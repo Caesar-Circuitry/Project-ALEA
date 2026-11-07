@@ -1,12 +1,13 @@
 """alea.game.biobuzz must equal the committed snapshot and the frozen shotsim.py values."""
 
 import json
+import math
 from pathlib import Path
 
 import pytest
 
 from alea.game import biobuzz
-from alea.sim import shotsim
+from alea.sim import shotsim, study
 
 SNAPSHOT = Path(__file__).parent / "golden" / "game_constants_snapshot.json"
 
@@ -51,6 +52,16 @@ SHOTSIM_NAMES = {
     "TICKS_TO_IN_S": "TICKS_TO_INPS",
 }
 
+# biobuzz name -> value in the frozen study.py (the robot-code copy it aims with)
+STUDY_VALUES = {
+    "HIVE_AUDIENCE_MOUTH_Y_IN": study.TARGET_Y,
+    "AIM_MAX_OFF_AXIS_DEG": math.degrees(study.MAX_OFF_AXIS),
+    "LUT_DISTANCE_IN": tuple(study.LUT_DISTANCE_IN),
+    "LUT_TICKS_PER_SEC": tuple(study.LUT_TICKS_PER_SEC),
+}
+# Values with no copy in the sim, checked by their own test below.
+DERIVED = {"HIVE_REAR_MOUTH_Y_IN"}
+
 
 def _current() -> dict:
     return {
@@ -67,5 +78,20 @@ def test_biobuzz_equals_shotsim(name, sim_name):
     assert getattr(biobuzz, name) == getattr(shotsim, sim_name)
 
 
+@pytest.mark.parametrize(("name", "value"), STUDY_VALUES.items())
+def test_biobuzz_equals_study(name, value):
+    assert getattr(biobuzz, name) == pytest.approx(value, abs=1e-9)
+
+
+def test_study_uses_biobuzz_geometry():
+    assert study.TARGET_X == biobuzz.HIVE_X_IN[0]
+    assert study.EXIT_BEHIND == -biobuzz.LAUNCH_EXIT_X_IN
+
+
+def test_rear_mouth_mirrors_audience_mouth():
+    mirrored = 2 * biobuzz.HIVE_Y_IN - biobuzz.HIVE_AUDIENCE_MOUTH_Y_IN
+    assert biobuzz.HIVE_REAR_MOUTH_Y_IN == pytest.approx(mirrored, abs=1e-9)
+
+
 def test_every_constant_is_mapped():
-    assert set(_current()) == set(SHOTSIM_NAMES)
+    assert set(_current()) == set(SHOTSIM_NAMES) | set(STUDY_VALUES) | DERIVED

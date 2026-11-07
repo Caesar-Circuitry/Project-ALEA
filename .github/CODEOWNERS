@@ -1,6 +1,5 @@
 # Physics-sensitive paths need a review from the physics maintainers.
-# Replace the placeholder team with real GitHub handles.
-/alea/sim/        @Caesar-Circuitry/physics
-/alea/game/       @Caesar-Circuitry/physics
-/alea/hifi/       @Caesar-Circuitry/physics
-/tests/golden/    @Caesar-Circuitry/physics
+/alea/sim/        @CohenHill
+/alea/game/       @CohenHill
+/alea/hifi/       @CohenHill
+/tests/golden/    @CohenHill

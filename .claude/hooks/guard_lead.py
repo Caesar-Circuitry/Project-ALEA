@@ -8,8 +8,6 @@ or `--agent lead`). Subagents and sessions started without the lead are untouche
 Exit 2 blocks the call; stderr goes back to the model. Pure stdlib.
 """
 
-from __future__ import annotations
-
 import json
 import re
 import shlex
@@ -76,6 +74,8 @@ GIT_BRANCH_WRITE = {
     "-d", "-D", "-m", "-M", "-c", "-C", "-f", "-u", "--delete", "--move", "--copy", "--force",
     "--set-upstream-to", "--unset-upstream", "--edit-description",
 }  # fmt: skip
+# Secret files the lead may not read through the shell (the Read deny rules cover the Read tool).
+SECRET_FILE = re.compile(r"(^|[/\\])(\.env(\.(?!example$)[^/\\]*)?|[^/\\]*\.(pem|key))$")
 GH_API_BODY_FLAGS = {"-f", "-F", "--field", "--raw-field", "--input"}
 BLOCK_MSG = (
     "BLOCKED for the lead: `{cmd}`. The lead coordinates and verifies; it does not write. "
@@ -234,6 +234,8 @@ def _segment_ok(segment: str) -> bool:
     tokens = _strip_prefix(tokens)
     if not tokens:
         return True
+    if any(SECRET_FILE.search(t.split("=", 1)[-1]) for t in tokens):
+        return False
     cmd, args = tokens[0], tokens[1:]
     if cmd not in ALLOWED:
         return False
@@ -281,8 +283,11 @@ def command_ok(cmd: str) -> bool:
 def main() -> int:
     try:
         payload = json.load(sys.stdin)
-    except Exception:
-        return 0
+        if not isinstance(payload, dict):
+            raise ValueError("hook input is not a JSON object")
+    except Exception as exc:  # fail closed: an unreadable call is not allowed through
+        sys.stderr.write(f"BLOCKED: lead guard could not read the tool call ({exc}).\n")
+        return 2
     if payload.get("agent_type") != "lead":
         return 0
     tool = payload.get("tool_name", "")
