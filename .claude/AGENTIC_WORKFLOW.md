@@ -36,6 +36,12 @@ verify with `just lint` / `just test` / `just selftest`, report with evidence.
 | 2 | Opus | `physics-reviewer`, `ci-diagnoser`; `/model opus` for a session | anything under `alea/sim`, `alea/game`, `alea/hifi`, `tests/golden`; `/code-review`; CI failure diagnosis; the dsim port; Warp kernels |
 | 3 | Fable | `orchestrator` only | complex multi-agent, multi-PR work the user has explicitly approved for Fable |
 
+The project also sets `advisorModel: opus` in `.claude/settings.json`. This is Claude Code's
+built-in advisor (the `/advisor` command): Sonnet and Haiku sessions and subagents can consult
+Opus through a server-side advisor tool, and it does not activate on a model that is not weaker
+than the advisor, so the Opus agents are unaffected. It may use more tokens. A person can turn it
+off for their own session with `/advisor`, or override it in `.claude/settings.local.json`.
+
 Rules:
 - Start cheap. Escalate one tier after two failures, not before.
 - `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` (settings `env`) is the default for any spawn without a

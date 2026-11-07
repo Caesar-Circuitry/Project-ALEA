@@ -22,6 +22,8 @@ subagents, each pinned to a model:
 | diagnose a CI failure | `ci-diagnoser` | Opus |
 | coordinate a multi-agent, multi-PR job | `orchestrator` | Fable, asks the user first |
 
+All Sonnet and Haiku work can consult Opus through the built-in advisor (`advisorModel: opus` in `.claude/settings.json`).
+
 One subagent per task, worktree isolation when two run at once, short summaries back.
 The full policy, including when to escalate a model, is in `.claude/AGENTIC_WORKFLOW.md`.
 The PR stages, what is done and what is next are in `.claude/ROADMAP.md`; read it before
