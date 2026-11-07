@@ -1,0 +1,20 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+    repositories {
+        google()
+        mavenCentral()
+        // PsiKit (org.psilynx.psikit:core and :ftc)
+        maven { url = 'https://repo.dairy.foundation/releases' }
+    }
+}
+
+rootProject.name = 'alea-robot'
+include ':TeamCode'

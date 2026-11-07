@@ -1,0 +1,4 @@
+// Top-level build file. Plugin versions only; everything else is in TeamCode/build.gradle.
+plugins {
+    id 'com.android.application' version '8.7.3' apply false
+}
