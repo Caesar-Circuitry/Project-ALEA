@@ -1,0 +1,4 @@
+event_code,event_name,label,red_score,blue_score
+TESTCUP,Test Cup,Q1,42,37
+TESTCUP,Test Cup,Q2,55,60
+TESTCUP,Test Cup,Q3,,
