@@ -109,3 +109,10 @@ def test_trig_replay() -> None:
     assert n > 400
     assert dev.abs_dev <= TOL_TRIG
     assert 0 < worst_math < MATH_SIN_COS_DEVIATION_BOUND  # math.sin/cos is close but not equal
+
+
+def test_trig_non_finite_is_nan() -> None:
+    """dsim: Math.round(+-Infinity) = +-Infinity, so inf - inf is NaN. No exception."""
+    for v in (math.nan, math.inf, -math.inf):
+        assert math.isnan(dsin(v))
+        assert math.isnan(dcos(v))

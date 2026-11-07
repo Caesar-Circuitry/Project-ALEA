@@ -175,7 +175,7 @@ def hive_surplus(load: HiveLoad) -> int:
 
 def hive_swing_rate(load: HiveLoad) -> float:
     """The swing's rate multiplier: 1 at threshold, rising with the surplus, capped."""
-    return min(BB_TIP_RATE_MAX, 1 + BB_TIP_RATE_PER_EXTRA * hive_surplus(load))
+    return float(min(BB_TIP_RATE_MAX, 1 + BB_TIP_RATE_PER_EXTRA * hive_surplus(load)))
 
 
 def hive_timer_step(

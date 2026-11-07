@@ -19,9 +19,12 @@ all floats in capture, load, sides, the three timer files, spill, deflect and tr
 tests demand equality. The spill replay also checks the RNG draw count (6 per pose) with a
 test-side mulberry32 and a cycled-values RNG.
 
-Deliberate non-matches with dsim: none in behaviour. `Math.round` and `Math.sign` are
-reimplemented with JavaScript semantics (Python's `round` is banker's). Launch times in the
-timer replay use the same JS rounding. In `hive_step`, as in dsim, `contents` is the caller's;
+Deliberate non-matches with dsim: none in the values the fixtures cover. `Math.round` and
+`Math.sign` are reimplemented with JavaScript semantics (Python's `round` is banker's); launch
+times in the timer replay use the same JS rounding. `dsin`/`dcos` return NaN for NaN or
+infinite input, as dsim does, instead of raising. Remaining small differences: `dsin(-0.0)`
+returns -0.0 where a +0 may appear in JS (equal under `==`), and Python ints vs JS numbers (for
+example the integer `tips`) are not distinguished from floats beyond what the tests compare. In `hive_step`, as in dsim, `contents` is the caller's;
 timer traces never clear it (see `tests/hifi_traces/README.md`).
 
 Not yet decided: nothing from `alea/game/` is used by this code. The differences listed below
@@ -66,12 +69,14 @@ pinned commit and against `alea/game/biobuzz.py`.
 - **Restitution: not matched.** ALEA's 0.45 is the ball off the hive and its frame. dsim has
   `BB_POLLEN_WALL_REST` 0.35 (`config.ts:710`, pollen against walls, which dsim's own comment calls
   an approximation) and `BB3_ELEMENT_RESTITUTION` 0.55 (`config.ts:3445`, elements on the ground).
-  A quick search of `hive3d.ts` and `bodies.ts` found no hive-specific value, but it was not
+  `hive.ts` itself has the hive miss bounce, `BB_HIVE_MISS_REST` 0.3 (`hive.ts:471`) and
+  `BB_HIVE_MISS_TANGENT` 0.5 (`hive.ts:472`); ported as dsim's values, not compared with ALEA's
+  0.45, not decided. A quick search of `hive3d.ts` and `bodies.ts` found no hive-specific value, but it was not
   exhaustive. Each of these changes scoring, so each needs an explicit answer before it is used.
 
 ## Validation
 
 Traces must be recorded from dsim at the pinned commit and stored as new fixtures; nothing in
 `tests/golden/` is regenerated. dsim ships `scripts/hive-calibrate.ts` and
-`scripts/smoke-biobuzz/hive3d.ts`, which are the likely sources. Running dsim needs Node and its
-dependencies; not set up here.
+`scripts/smoke-biobuzz/hive3d.ts`, which are the likely sources. The traces are recorded (`tests/hifi_traces/`, with the recorder and how to rerun it in
+`tests/hifi_traces/README.md`); rerunning needs Node and runs only in the `alea-dev` container.

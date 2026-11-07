@@ -7,7 +7,7 @@ dsim's deterministic sine and cosine (`src/math.ts:65-88`): a Taylor polynomial 
 folded range, about 1e-11 maximum error, using only +, -, *, / and rounding so every machine gets
 the same bits. `hive.ts` calls them in `spillPoses`. They are ported (rather than replaced by
 `math.sin` / `math.cos`) because they are short and the replay then matches dsim exactly; see
-tests/test_hifi_hive_trig.py. Angles are in radians.
+`test_trig_replay` in tests/test_hifi_hive_spill.py. Angles are in radians.
 """
 
 import math
@@ -25,6 +25,8 @@ def _js_round(x: float) -> float:
 
 def dsin(x: float) -> float:
     """dsim's deterministic sine (`math.ts:65`)."""
+    if not math.isfinite(x):
+        return math.nan  # JS: Math.round(+-Infinity) is +-Infinity, so inf - inf = NaN
     x -= _TWO_PI * _js_round(x / _TWO_PI)  # reduce to [-PI, PI]
     if x > _HALF_PI:
         x = _PI - x  # fold to [-PI/2, PI/2] via sin(PI-x) = sin(x)

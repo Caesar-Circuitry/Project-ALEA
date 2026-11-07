@@ -51,6 +51,7 @@ class Dev:
                 f"{where}: {actual!r}"
             )
             d = abs(float(actual) - float(expected))
+            assert d == d, f"{where}: NaN deviation ({actual!r} vs {expected!r})"
             self.n_floats += 1
             self.abs_dev = max(self.abs_dev, d)
             if expected != 0:
