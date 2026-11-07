@@ -5,12 +5,27 @@ Starts as a validated GPU Monte Carlo shot simulator (NVIDIA Warp) and grows int
 database, robot log import, video review, driver critique, robot health monitoring, full match
 simulation, scouting and a web app.
 
-Full README lands with the docs PR. Quick start today:
+## Install
+
+ALEA runs on macOS, Linux and Windows. Install [uv](https://docs.astral.sh/uv/) and
+[just](https://github.com/casey/just), clone the repo, then run `just sync` and `just test`.
+
+| OS | uv | just | Notes |
+|---|---|---|---|
+| macOS (Apple silicon) | `brew install uv` | `brew install just` | CPU only; Warp runs on CPU. |
+| Linux (x86-64 or arm64) | `curl -LsSf https://astral.sh/uv/install.sh \| sh` | `cargo install just` or `uv tool install rust-just` | NVIDIA GPU optional: `uv sync --all-extras --group dev` adds the `gpu` extra. |
+| Windows 11 (x86-64) | `winget install astral-sh.uv` | `winget install Casey.Just` | Needs PowerShell 7 (`winget install Microsoft.PowerShell`). Windows arm64 is not supported yet. |
 
 ```
-uv sync --all-extras --no-extra gpu --group dev
-uv run pytest
+git clone https://github.com/Caesar-Circuitry/Project-ALEA.git
+cd Project-ALEA
+just sync
+just test
+just selftest
 ```
+
+Without `just`: `uv sync --all-extras --no-extra gpu --group dev` then `uv run pytest`.
+Documentation: `just docs-serve`. The published site deploys from `main` via GitHub Pages; the repo owner must enable it once (Settings > Pages > Source: GitHub Actions).
 
 ## Commands
 
@@ -55,4 +70,4 @@ Notes:
 - On Windows, recipes run in PowerShell 7 (`pwsh`). Install PowerShell 7 first. The shell is set
   by `set windows-shell` in `justfile`.
 
-**Roadmap phase:** all (the full README lands in PR 7)
+**Roadmap phase:** all

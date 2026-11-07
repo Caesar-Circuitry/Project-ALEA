@@ -91,7 +91,7 @@ Weaknesses, stated plainly:
   `.git/info` or `.git/modules` overlays on purpose, and a test pins that. The two can drift.
 - **`just robot` cannot run in the container.** There is no Android SDK. The robot build runs in
   CI or on a host that has the SDK.
-- **The image is for CPU only.** The CUDA image comes in PR 7.
+- **The image is for CPU only.** The CUDA image is in `.devcontainer/cuda/`.
 - **It adds Docker as a requirement.** Every non-lead agent needs a running `alea-dev` container.
 - **The guard is not yet proven live.** It has unit tests only (about 85 crafted payloads and
   `tests/test_guard_container.py`). No real subagent has hit it, because the session that built

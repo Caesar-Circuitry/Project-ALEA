@@ -4,4 +4,4 @@ One short file per architectural decision, numbered: `NNNN-slug.md` with Context
 
 **Roadmap phase:** all
 
-Index: [0002](0002-robot-contract.md), [0003](0003-agentic-workflow-and-models.md), [0004](0004-branch-protection.md), [0006](0006-agent-sandbox.md).
+Index: [0001](0001-scope-and-stack.md), [0002](0002-robot-contract.md), [0003](0003-agentic-workflow-and-models.md), [0004](0004-branch-protection.md), [0006](0006-agent-sandbox.md).

@@ -1,0 +1,20 @@
+site_name: ALEA
+site_description: Strategy analysis platform of FTC team 24331 Caesar Circuitry
+repo_url: https://github.com/Caesar-Circuitry/Project-ALEA
+theme:
+  name: material
+nav:
+  - Home: README.md
+  - Summary: summary.md
+  - Knowledge base: knowledge-base.md
+  - Technical binder: technical-binder.md
+  - Student Q&A: student-qa.md
+  - EP page 13 text: ep-page-13.md
+  - Robot interface: robot-interface.md
+  - Decisions:
+      - decisions/README.md
+      - 0001 Scope and stack: decisions/0001-scope-and-stack.md
+      - 0002 Robot contract: decisions/0002-robot-contract.md
+      - 0003 Agentic workflow: decisions/0003-agentic-workflow-and-models.md
+      - 0004 Branch protection: decisions/0004-branch-protection.md
+      - 0006 Agent sandbox: decisions/0006-agent-sandbox.md
