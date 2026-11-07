@@ -22,13 +22,27 @@ Each file has the top-level fields `dsim_commit`, `source_file`, `scenario`, `ge
 | `timer_coarse.json` | same at dt = 0.25, 1, 3 and 5 s (3 and 5 s exercise the settle fallback spill) |
 | `spill.json` | `spillPoses` with a mulberry32 RNG (seed and source in `inputs.rng`) and a cycled-values RNG; counts 0, 1, 3, 8, 14; both alliances; mid-swing and settled; `draws` = RNG calls (6 per pose) |
 | `constants.json` | the config.ts hive/tip/spill block (`BB_TIP_POLLEN` = [8,7,6,3,1,0], `BB_TIP_*`, `BB_SPILL_*`, `BB_HIVE_*`, `BB3_HIVE_*`, `BB_CELL_OPEN`, radii), hive.ts' own constants, the `HIVE` block of `fieldDims.gen.ts`, tip-table lookup for nectar 0..12 |
+| `trig.json` | dsim's own `dsin`/`dcos` (`src/math.ts`, polynomial approximations, ~1e-11 error, not `Math.sin/cos`) sampled at whole degrees 0..360, negative angles, the fan/kick angles `spillPoses` feeds them for the `spill.json` stream, and the fan extremes. The Python port must port them or tolerance-check against these |
 | `deflect.json` | `hiveDeflect` (hive.ts, pure, no 3D engine): each face, open top and mouth, pivot plane, inside/outside |
+
+Timer-file caveats:
+
+- `hiveTimerStep` never clears `contents` (the caller does) and the recorder keeps the tray full, so after the settle a timer run starts a second swing: `tips` can reach 2 at dt 3 and 5 while `hiveStep` rows show 1 (it empties the tray at the release). Compare the two only up to the first `tipped`.
+- Launch times are in seconds (`t_s`) and applied at step `round(t_s/dt)`, so they scale with dt. Applied launches are in `launches_timer` / `launches_step`; any not reached are in `launches_not_reached_*`.
+- The recorder's add rule always aims at the taking-cell centre, inbound and descending, so timer traces never contain a refused launch. Refusal is covered only by `capture.json`.
+- `BB_SPILL_*` constants are defined in `hive.ts`, not `config.ts` (the config filter matches none of them); they are in `constants.json` under `hive_ts`.
 
 In the timer files `timer_steps` rows drop `hive.contents` (`hiveTimerStep` returns it
 untouched; the recorder asserts that); `step_steps` rows keep it. Launches into the tray are
 offered by the recorder and added only if dsim's `hiveAccepts` says yes (that add rule is the
 recorder's, documented in `inputs.launch_rule`). The `kindOf` callback and the RNGs belong to the
 caller in dsim, so the recorder defines them.
+
+## Licence notice
+
+These fixtures embed dsim constants and outputs. They are derived from dsim by genius0412
+(github.com/genius0412/dsim) at the pinned commit and are under PolyForm Noncommercial 1.0.0;
+see `alea/hifi/LICENSE-dsim`. Do not redistribute them outside those terms.
 
 ## dsim is untrusted
 

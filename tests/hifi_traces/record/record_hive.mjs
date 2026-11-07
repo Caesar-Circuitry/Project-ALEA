@@ -153,7 +153,7 @@ function runScenario(sc, fn) {
   const launches = [];
   let tippedAt = null;
   for (let i = 0; i < sc.max_steps; i++) {
-    for (const L of sc.launches ?? []) if (L.step === i) {
+    for (const L of sc.launches ?? []) if (Math.round(L.t_s / sc.dt) === i) {
       const side = H.hiveTakingSide(hive);
       const c = H.hiveCellPos('red', side);
       const ok = H.hiveAccepts(hive, 'red', c, zMid, { x: 0, y: H.hiveApproachSign(side), z: -10 });
@@ -171,7 +171,8 @@ function runScenario(sc, fn) {
     if (r.tipped && tippedAt === null) tippedAt = i;
     if (tippedAt !== null && i - tippedAt >= (sc.after ?? 2)) break;
   }
-  return { launches, steps };
+  const not_reached = (sc.launches ?? []).filter((L) => Math.round(L.t_s / sc.dt) >= steps.length);
+  return { launches, steps, not_reached };
 }
 const P = (n) => Array(n).fill('pollen');
 const N = (n, c = 'red') => Array(n).fill(c);
@@ -184,7 +185,7 @@ function scenarios(dt, group) {
     { name: 'surplus2_10p', up: 'north', kinds: P(10) },
     { name: 'surplus_cap_14p', up: 'north', kinds: P(14) },
     { name: 'below_threshold_7p', up: 'north', kinds: P(7), max_steps: 60, after: 0 },
-    { name: 'fire_into_swinging_tray', up: 'north', kinds: P(8), launches: [{ step: 1, kind: 'pollen' }, { step: 20, kind: 'red' }, { step: 40, kind: 'pollen' }, { step: 90, kind: 'pollen' }, { step: 100, kind: 'blue' }] },
+    { name: 'fire_into_swinging_tray', up: 'north', kinds: P(8), launches: [{ t_s: 1 / 60, kind: 'pollen' }, { t_s: 0.5, kind: 'red' }, { t_s: 1, kind: 'pollen' }, { t_s: 1.5, kind: 'pollen' }, { t_s: 1.75, kind: 'blue' }] },
   ].filter((s) => group === undefined || group.includes(s.name)).map((s) => ({ ...s, dt, max_steps: s.max_steps ?? 1200 }));
 }
 function timerFile(file, scenario, dts, group) {
@@ -192,13 +193,13 @@ function timerFile(file, scenario, dts, group) {
   for (const dt of dts) for (const sc of scenarios(dt, group)) {
     const t = runScenario(sc, 'timer');
     const s = runScenario(sc, 'step');
-    outs.push({ name: sc.name, dt_s: dt, up: sc.up, initial_kinds: sc.kinds, launches_offered: sc.launches ?? [], max_steps: sc.max_steps, launches_timer: t.launches, launches_step: s.launches, timer_steps: t.steps, step_steps: s.steps });
+    outs.push({ name: sc.name, dt_s: dt, up: sc.up, initial_kinds: sc.kinds, launches_offered: sc.launches ?? [], max_steps: sc.max_steps, launches_not_reached_timer: t.not_reached, launches_not_reached_step: s.not_reached, launches_timer: t.launches, launches_step: s.launches, timer_steps: t.steps, step_steps: s.steps });
   }
   emit(file, scenario, {
     consts: { swing_s: H.BB_TIP_SWING_S, release_s: H.BB_TIP_RELEASE_S },
     kindOf: 'kinds list indexed by id; ids 0..n-1 initially, launches get the next id',
-    launch_rule: 'recorder: a launch offered at step i is added iff hiveAccepts(hive, red, centre of taking cell, mid opening z, vel = {x:0, y:hiveApproachSign(taking), z:-10}); then step i is run. Each scenario is run twice from the same inputs, once with hiveTimerStep and once with hiveStep. A run stops 2 steps after the first tipped=true step (never for below_threshold), or at max_steps.',
-    timer_steps_note: 'timer_steps rows omit hive.contents (hiveTimerStep returns it untouched; the recorder asserts it); step_steps rows carry it',
+    launch_rule: 'recorder: a launch offered at time t_s is applied at step round(t_s/dt) (so launch times scale with dt; launches whose step is past the end of the run are listed in launches_not_reached_*; applied ones, with accepted flags, in launches_timer / launches_step). It is added iff hiveAccepts(hive, red, centre of taking cell, mid opening z, vel = {x:0, y:hiveApproachSign(taking), z:-10}); then that step is run. The add rule always aims at the taking-cell centre, inbound and descending, so these traces never contain a refused launch; refusal is covered only by capture.json. Each scenario is run twice from the same inputs, once with hiveTimerStep and once with hiveStep. A run stops 2 steps after the first tipped=true step (never for below_threshold), or at max_steps.',
+    timer_steps_note: 'IMPORTANT: hiveTimerStep never clears contents (the caller does); the recorder keeps the tray full, so after the settle the timer run starts a SECOND swing (tips can reach 2 at dt 3 and 5 while hiveStep rows show tips 1, because hiveStep empties the tray at the release). Compare the two series only up to the first tipped=true. timer_steps rows omit hive.contents (hiveTimerStep returns it untouched; the recorder asserts it); step_steps rows carry it',
     scenarios_in_file: outs.map((o) => o.name),
     initial_hive: 'contents = ids of initial_kinds, tips 0, tipping 0, released false, no swingRate key',
     key_note: 'a hive with no swingRate key means undefined (key omitted)',
@@ -221,9 +222,10 @@ function mulberry32(seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+const SPILL_SEED = 20261107;
 const CYCLE = [0.0, 0.25, 0.5, 0.75, 0.999, 0.1, 0.9, 0.333333333333, 0.6180339887498949];
 {
-  const SEED = 20261107;
+  const SEED = SPILL_SEED;
   const cases = [];
   for (const alliance of ALL) for (const [label, hive] of [
     ['mid_swing_up_north', mkHive('north', { tipping: 2, released: true })],
@@ -246,6 +248,32 @@ const CYCLE = [0.0, 0.25, 0.5, 0.75, 0.999, 0.1, 0.9, 0.333333333333, 0.61803398
   }, { cases });
 }
 
+// ================= 8. trig.json =================
+{
+  const M = await imp('math.ts');
+  const D = Math.PI / 180;
+  const sample = (a) => ({ a, sin: M.dsin(a), cos: M.dcos(a) });
+  const degs = [];
+  for (let d = 0; d <= 360; d++) degs.push({ deg: d, ...sample(d * D) });
+  const neg = [];
+  for (let d = -360; d < 0; d += 15) neg.push({ deg: d, ...sample(d * D) });
+  // the angles spillPoses feeds dsin/dcos: fan a = (u*2-1)*FAN*PI/180 and kick ka = u*2*PI, for the draws
+  // of the spill.json mulberry32 stream (6 draws per pose, 14 poses), plus the fan extremes
+  const rng = mulberry32(SPILL_SEED);
+  const used = [];
+  for (let i = 0; i < 14; i++) {
+    const d = [rng(), rng(), rng(), rng(), rng(), rng()];
+    const a = (d[3] * 2 - 1) * H.BB_SPILL_FAN * (Math.PI / 180);
+    const ka = d[4] * 2 * Math.PI;
+    used.push({ pose: i, fan: sample(a), kick: sample(ka) });
+  }
+  const ext = [-1, 0, 1].map((u) => sample(u * H.BB_SPILL_FAN * (Math.PI / 180)));
+  emit('trig.json', "dsim's deterministic dsin/dcos (src/math.ts, polynomial, not Math.sin/cos; ~1e-11 error) sampled for the Python port: whole degrees 0..360, -360..-15 step 15, the fan/kick angles spillPoses uses for the spill.json mulberry32 stream, and the fan extremes.", {
+    functions: 'dsin(a), dcos(a) with a in RADIANS; sample angle a = deg * (Math.PI / 180) computed in JS',
+    spill_seed: SPILL_SEED,
+  }, { degrees_0_360: degs, degrees_neg: neg, spill_stream_angles: used, fan_extremes: ext });
+}
+
 // ================= 6. constants.json =================
 {
   const cfg = {};
@@ -262,7 +290,7 @@ const CYCLE = [0.0, 0.25, 0.5, 0.75, 0.999, 0.1, 0.9, 0.333333333333, 0.61803398
   let fd = null;
   try { const G = await imp('games/biobuzz/fieldDims.gen.ts'); if (G.HIVE) fd = G.HIVE; } catch (e) { fd = { error: String(e) }; }
   emit('constants.json', 'Hive constants as dsim exports them (config.ts hive/tip/spill block and hive.ts own exports), and the tip-table lookup for nectar 0..12.', {
-    config_filter: '/^(BB3?_HIVE_|BB_TIP_|BB_SPILL_|BB_CELL_OPEN|BB_POLLEN_R$|BB_NECTAR_R$)/ over the exports of config.ts, non-functions',
+    config_filter_note: 'BB_SPILL_* is not defined in config.ts: those constants live in hive.ts and are in hive_ts (the pattern is kept so a future config.ts addition shows up). ', config_filter: '/^(BB3?_HIVE_|BB_TIP_|BB_SPILL_|BB_CELL_OPEN|BB_POLLEN_R$|BB_NECTAR_R$)/ over the exports of config.ts, non-functions',
     hive_ts_reads: ['BB_CELL_OPEN', 'BB_HIVE_BOTTOM_Z', 'BB_HIVE_CELL_DY', 'BB_HIVE_LEN', 'BB_HIVE_OPEN_Z', 'BB_HIVE_W', 'BB_HIVE_X', 'BB_TIP_POLLEN'],
   }, { config_ts: cfg, hive_ts: hiveTs, fieldDims_gen_HIVE: fd, tip_table_lookup: table });
 }

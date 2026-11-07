@@ -22,6 +22,7 @@ def test_expected_fixtures_exist() -> None:
         "timer_dt60_surplus.json",
         "timer_coarse.json",
         "spill.json",
+        "trig.json",
         "constants.json",
         "deflect.json",
     } <= names

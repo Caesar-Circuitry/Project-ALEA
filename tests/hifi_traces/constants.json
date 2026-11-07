@@ -7,6 +7,7 @@
     "command": "cd /tmp/dsim-rec && ./node_modules/.bin/tsx record_hive.mjs /tmp/dsim-src <out-dir>   (run through `just dev`)"
   },
   "inputs": {
+    "config_filter_note": "BB_SPILL_* is not defined in config.ts: those constants live in hive.ts and are in hive_ts (the pattern is kept so a future config.ts addition shows up). ",
     "config_filter": "/^(BB3?_HIVE_|BB_TIP_|BB_SPILL_|BB_CELL_OPEN|BB_POLLEN_R$|BB_NECTAR_R$)/ over the exports of config.ts, non-functions",
     "hive_ts_reads": ["BB_CELL_OPEN","BB_HIVE_BOTTOM_Z","BB_HIVE_CELL_DY","BB_HIVE_LEN","BB_HIVE_OPEN_Z","BB_HIVE_W","BB_HIVE_X","BB_TIP_POLLEN"]
   },
