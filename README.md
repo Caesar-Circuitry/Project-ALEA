@@ -25,7 +25,7 @@ just selftest
 ```
 
 Without `just`: `uv sync --all-extras --no-extra gpu --group dev` then `uv run pytest`.
-Documentation: `just docs-serve`.
+Documentation: `just docs-serve`. The published site deploys from `main` via GitHub Pages; the repo owner must enable it once (Settings > Pages > Source: GitHub Actions).
 
 ## Commands
 
@@ -70,4 +70,4 @@ Notes:
 - On Windows, recipes run in PowerShell 7 (`pwsh`). Install PowerShell 7 first. The shell is set
   by `set windows-shell` in `justfile`.
 
-**Roadmap phase:** all 
+**Roadmap phase:** all

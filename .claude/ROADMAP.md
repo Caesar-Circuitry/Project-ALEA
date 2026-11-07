@@ -18,7 +18,7 @@ Last updated: 2026-11-07.
 | 5 | `setup/05-robot-contract` | `docs/robot-interface.md`, sample robot, contract test | merged (#19) | |
 | 6 | `setup/06-data-importers` | SQLAlchemy models, `.rlog` reader, `.wpilog` reader | merged (#24) | |
 | 7a | `setup/07a-devcontainer` | CPU dev container, agent shell sandbox, guard_container hook, decision 0006 | merged (#23) | |
-| 7 | `setup/07-dev-env-docs` | Dev containers, `hpc/`, MkDocs site, notebook, README | todo | `_incoming/` docs text |
+| 7 | `setup/07-dev-env-docs` | Dev containers, `hpc/`, MkDocs site, notebook, README | in review | `_incoming/` docs text. Pages needs a one-time manual setting: Settings > Pages > Source: GitHub Actions |
 | 8 | `setup/08-hifi-stub` | `alea/hifi` stub, `fidelity` switch, decision 0005, delete `_incoming/` | todo | PR 4 |
 
 PRs 4 to 8 need the source the user copies from `~/Downloads/alea_project` into `_incoming/`.
@@ -116,8 +116,9 @@ it is missing, stop and ask.
 - Done when: a sample log imports into SQLite with every contract key.
 
 ### 7: dev environment and docs
-- `.devcontainer/cpu/` landed in 7a. `.devcontainer/cuda/` is still to do; `hpc/brev`,
-  `hpc/slurm`, `hpc/apptainer` are still to do.
+- `.devcontainer/cpu/` landed in 7a. `.devcontainer/cuda/`, `hpc/brev`, `hpc/slurm` and
+  `hpc/apptainer` landed in PR 7 (untested without a GPU).
+- `docs` CI job and `.github/workflows/pages.yml` (deploy on push to `main`) landed in PR 7.
 - `mkdocs.yml` and docs text from `_incoming/`; decision 0001.
 - Notebook paired with jupytext; root README with a per-OS install table.
 - Done when: `just docs` is clean and Pages is live.
