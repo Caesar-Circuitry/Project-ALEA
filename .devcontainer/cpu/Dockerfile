@@ -6,6 +6,14 @@ FROM python:3.12-slim-bookworm
 # uv from the official image, pinned.
 COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /uvx /usr/local/bin/
 
+# Node.js 22 LTS with npm, copied from the official image, pinned. It is here to run third-party
+# TypeScript (dsim, for the phase 1b validation traces) inside the sandbox; the project itself is
+# Python. Same Debian bookworm as the base, so the binary links cleanly on arm64 and amd64.
+COPY --from=node:22.17.0-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:22.17.0-bookworm-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
 # git, curl, a JDK 17 and libatomic1 (the node runtime pyright downloads needs it). build-essential is not needed: every dependency ships a wheel on
 # linux arm64 and x86-64. `just` comes from PyPI (rust-just) because bookworm has no package.
 RUN apt-get update \
