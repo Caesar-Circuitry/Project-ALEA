@@ -1,0 +1,46 @@
+[
+  {"eventSeason": 2026, "eventCode": "TESTEVT", "id": 1, "hasBeenPlayed": true,
+   "scheduledStartTime": "2026-10-24T15:00:00.000Z", "actualStartTime": "2026-10-24T15:01:30.000Z",
+   "postResultTime": "2026-10-24T15:05:10.000Z", "tournamentLevel": "Quals", "series": 0,
+   "scores": {"red": {"totalPoints": 24}, "blue": {"totalPoints": 28}},
+   "teams": [
+     {"alliance": "Red", "station": "One", "teamNumber": 10001},
+     {"alliance": "Red", "station": "Two", "teamNumber": 10002},
+     {"alliance": "Blue", "station": "One", "teamNumber": 10003},
+     {"alliance": "Blue", "station": "Two", "teamNumber": 10004}]},
+  {"eventSeason": 2026, "eventCode": "TESTEVT", "id": 2, "hasBeenPlayed": true,
+   "scheduledStartTime": "2026-10-24T15:08:00.000Z", "actualStartTime": "2026-10-24T15:09:00.000Z",
+   "postResultTime": "2026-10-24T15:13:00.000Z", "tournamentLevel": "Quals", "series": 0,
+   "scores": {"red": {"totalPoints": 40}, "blue": {"totalPoints": 31}},
+   "teams": [
+     {"alliance": "Red", "station": "One", "teamNumber": 10005},
+     {"alliance": "Red", "station": "Two", "teamNumber": 10006},
+     {"alliance": "Blue", "station": "One", "teamNumber": 10007},
+     {"alliance": "Blue", "station": "Two", "teamNumber": 10008}]},
+  {"eventSeason": 2026, "eventCode": "TESTEVT", "id": 3, "hasBeenPlayed": true,
+   "scheduledStartTime": "2026-10-24T15:16:00.000Z", "actualStartTime": "2026-10-24T15:17:30.000Z",
+   "postResultTime": "2026-10-24T15:21:00.000Z", "tournamentLevel": "Quals", "series": 0,
+   "scores": {"red": {"totalPoints": 12}, "blue": {"totalPoints": 12}},
+   "teams": [
+     {"alliance": "Red", "station": "One", "teamNumber": 10009},
+     {"alliance": "Red", "station": "Two", "teamNumber": 10001},
+     {"alliance": "Blue", "station": "One", "teamNumber": 10002},
+     {"alliance": "Blue", "station": "Two", "teamNumber": 10003}]},
+  {"eventSeason": 2026, "eventCode": "TESTEVT", "id": 4, "hasBeenPlayed": false,
+   "scheduledStartTime": "2026-10-24T15:24:00.000Z", "actualStartTime": null,
+   "postResultTime": null, "tournamentLevel": "Quals", "series": 0, "scores": null,
+   "teams": [
+     {"alliance": "Red", "station": "One", "teamNumber": 10004},
+     {"alliance": "Red", "station": "Two", "teamNumber": 10005},
+     {"alliance": "Blue", "station": "One", "teamNumber": 10006},
+     {"alliance": "Blue", "station": "Two", "teamNumber": 10007}]},
+  {"eventSeason": 2026, "eventCode": "TESTEVT", "id": 20001, "hasBeenPlayed": true,
+   "scheduledStartTime": "2026-10-24T16:00:00.000Z", "actualStartTime": "2026-10-24T16:02:00.000Z",
+   "postResultTime": "2026-10-24T16:06:00.000Z", "tournamentLevel": "Finals", "series": 0,
+   "scores": {"red": {"totalPoints": 55}, "blue": {"totalPoints": 47}},
+   "teams": [
+     {"alliance": "Red", "station": "One", "teamNumber": 10001},
+     {"alliance": "Red", "station": "Two", "teamNumber": 10003},
+     {"alliance": "Blue", "station": "One", "teamNumber": 10005},
+     {"alliance": "Blue", "station": "Two", "teamNumber": 10007}]}
+]
