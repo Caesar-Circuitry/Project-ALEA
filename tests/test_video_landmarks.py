@@ -19,18 +19,20 @@ def test_counts_and_names_unique() -> None:
     assert kinds.count("wall_top") == 4
     assert kinds.count("hive_pivot") == 2
     assert kinds.count("hive_frame") == 8
+    assert kinds.count("hive_mouth") == 4
+    assert kinds.count("hive_mouth") == 4
     assert all(k == lm.name for k, lm in table.items())
 
 
 def test_values_derive_from_game_constants() -> None:
-    assert get_landmark("field_corner_x141_y141_z0").xyz_in == (g.FIELD_SIZE_IN,) * 2 + (0.0,)
-    assert get_landmark("wall_top_x0_y0").z_in == g.WALL_HEIGHT_IN
-    assert get_landmark("hive_pivot_red").xyz_in == (
+    assert get_landmark("field_floor_corner_xhi_yhi").xyz_in == (g.FIELD_SIZE_IN,) * 2 + (0.0,)
+    assert get_landmark("field_wall_top_corner_xlo_ylo").z_in == g.WALL_HEIGHT_IN
+    assert get_landmark("hive_red_pivot").xyz_in == (
         g.HIVE_X_IN[0],
         g.HIVE_Y_IN,
         g.HIVE_PIVOT_HEIGHT_IN,
     )
-    top = get_landmark("hive_frame_x96_y91_z45")
+    top = get_landmark("hive_frame_corner_xhi_yhi_zhi")
     assert top.xyz_in == (
         g.FRAME_X0_IN + g.FRAME_NX,
         g.FRAME_Y0_IN + g.FRAME_NY,
@@ -47,4 +49,4 @@ def test_floor_split() -> None:
 def test_unknown_name_and_array() -> None:
     with pytest.raises(KeyError, match="unknown landmark"):
         get_landmark("nope")
-    assert landmarks_xyz_in(["wall_top_x0_y0"]).shape == (1, 3)
+    assert landmarks_xyz_in(["field_wall_top_corner_xlo_ylo"]).shape == (1, 3)

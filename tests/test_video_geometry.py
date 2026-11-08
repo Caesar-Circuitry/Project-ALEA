@@ -25,16 +25,16 @@ from alea.video.landmarks import landmarks_xyz_in
 W, H = 1920, 1080
 F = 1660.0
 NAMES = [
-    "field_corner_x0_y0_z0",
-    "field_corner_x141_y0_z0",
-    "field_corner_x0_y141_z0",
-    "field_corner_x141_y141_z0",
-    "wall_top_x0_y0",
-    "wall_top_x141_y0",
-    "wall_top_x0_y141",
-    "wall_top_x141_y141",
-    "hive_pivot_red",
-    "hive_pivot_blue",
+    "field_floor_corner_xlo_ylo",
+    "field_floor_corner_xhi_ylo",
+    "field_floor_corner_xlo_yhi",
+    "field_floor_corner_xhi_yhi",
+    "field_wall_top_corner_xlo_ylo",
+    "field_wall_top_corner_xhi_ylo",
+    "field_wall_top_corner_xlo_yhi",
+    "field_wall_top_corner_xhi_yhi",
+    "hive_red_pivot",
+    "hive_blue_pivot",
 ]
 CENTRE = np.array([g.FIELD_SIZE_IN / 2, g.FIELD_SIZE_IN / 2, 0.0])
 
@@ -124,7 +124,7 @@ def test_noise_two_pixels_still_sane() -> None:
 
 def test_floor_only_is_flagged_unrefined() -> None:
     cam = CAMERAS["audience"]
-    names = [*NAMES[:4], "hive_frame_x46_y51_z0", "hive_frame_x96_y91_z0"]
+    names = [*NAMES[:4], "hive_frame_corner_xlo_ylo_zlo", "hive_frame_corner_xhi_yhi_zlo"]
     fit = fit_camera(landmarks_xyz_in(names), clicks(cam, names, 0.0, 0), W, H)
     assert fit.model == "pinhole_from_homography"
     assert any("unrefined" in w for w in fit.warnings)
@@ -217,11 +217,11 @@ def test_calibration_roundtrip(tmp_path) -> None:
     assert back.max_floor_in is not None and back.max_floor_in > 0
     assert all(c.residual_px is not None for c in back.landmarks)
     # with exactly 4 floor corners, leaving one out leaves 3: no leave-one-out for those
-    assert all(c.loo_residual_px is not None for c in back.landmarks if c.name[0] != "f")
-    assert all(c.loo_residual_px is None for c in back.landmarks if c.name[0] == "f")
-    floor = [c for c in back.landmarks if c.name.startswith("field_corner")]
+    floor = [c for c in back.landmarks if c.name.startswith("field_floor")]
+    assert all(c.loo_residual_px is None for c in floor)
+    assert all(c.loo_residual_px is not None for c in back.landmarks if c not in floor)
     assert all(c.floor_major_in and c.floor_minor_in for c in floor)
-    assert all(c.floor_major_in is None for c in back.landmarks if c.name.startswith("wall"))
+    assert all(c.floor_major_in is None for c in back.landmarks if c.name.startswith("field_wall"))
 
 
 def test_bad_schema_and_empty(tmp_path) -> None:
@@ -258,20 +258,20 @@ SUBSETS = {
     "corners_and_walls": NAMES[:8],
     "hive_heavy": [
         *NAMES[:4],
-        "hive_pivot_red",
-        "hive_pivot_blue",
-        "hive_frame_x46_y51_z45",
-        "hive_frame_x96_y91_z45",
-        "hive_frame_x96_y51_z45",
+        "hive_red_pivot",
+        "hive_blue_pivot",
+        "hive_frame_corner_xlo_ylo_zhi",
+        "hive_frame_corner_xhi_yhi_zhi",
+        "hive_frame_corner_xhi_ylo_zhi",
     ],
     "near_half_only": [
         NAMES[0],
         NAMES[1],
-        "wall_top_x0_y0",
-        "wall_top_x141_y0",
-        "hive_frame_x46_y51_z0",
-        "hive_frame_x96_y51_z0",
-        "hive_pivot_red",
+        "field_wall_top_corner_xlo_ylo",
+        "field_wall_top_corner_xhi_ylo",
+        "hive_frame_corner_xlo_ylo_zlo",
+        "hive_frame_corner_xhi_ylo_zlo",
+        "hive_red_pivot",
     ],
 }
 
@@ -292,7 +292,7 @@ def test_varying_landmark_subsets(subset: str) -> None:
 def test_pooling_clicks_from_several_frames() -> None:
     cam = CAMERAS["audience"]
     first = _clicks(cam, NAMES[:6], 1.0, 1, frame=100)
-    second = _clicks(cam, [*NAMES[2:8], "hive_pivot_red"], 1.0, 2, frame=900)  # overlap allowed
+    second = _clicks(cam, [*NAMES[2:8], "hive_red_pivot"], 1.0, 2, frame=900)  # overlap allowed
     cal = calibrate(first + second, VideoInfo(width_px=W, height_px=H))
     assert cal.camera is not None and len(cal.landmarks) == 13
     assert {c.frame for c in cal.landmarks} == {100, 900}

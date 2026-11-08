@@ -20,7 +20,7 @@ from alea.video.geometry import (
     floor_ellipse,
     floor_point_from_homography,
 )
-from alea.video.landmarks import get_landmark, landmarks_xyz_in
+from alea.video.landmarks import get_landmark, is_custom_id, landmarks_xyz_in
 
 SCHEMA_VERSION = 1
 
@@ -158,6 +158,8 @@ def calibrate(
 ) -> Calibration:
     """Fit ONE static camera to clicked landmarks (any visible subset, possibly pooled from
     several frames of the same video) and return the calibration record."""
+    custom = [c for c in clicks if is_custom_id(c.name)]
+    clicks = [c for c in clicks if not is_custom_id(c.name)]
     if not clicks:
         raise GeometryError("no landmark clicks")
     world = landmarks_xyz_in([c.name for c in clicks])
@@ -184,7 +186,14 @@ def calibrate(
         rms_reprojection_px=fit.rms_px,
         max_loo_residual_px=_finite_or_none(fit.max_loo_px),
         max_floor_in=float(max(majors)) if majors else None,
-        warnings=list(fit.warnings),
+        warnings=[
+            *fit.warnings,
+            *(
+                [f"ignored custom landmark ids (no coordinates in alea.game): {names}"]
+                if (names := sorted({c.name for c in custom}))
+                else []
+            ),
+        ],
         valid_frames=valid_frames,
         camera_setup_id=camera_setup_id,
         operator=operator,

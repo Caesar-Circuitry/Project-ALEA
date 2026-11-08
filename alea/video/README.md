@@ -13,6 +13,9 @@ from several frames of the same video may be pooled. Nothing assumes a shared ca
 - `landmarks.py`: named 3D landmarks (field corners, wall tops, hive pivots, hive frame box
   corners), all derived from `alea.game.biobuzz`. No game values live here. A hive frame box
   corner is a real post only where the CAD has a cube; click only what you can see.
+  Ids match the click log's strings (`field_floor_corner_xlo_ylo`, `hive_red_pivot`,
+  `hive_frame_corner_xlo_ylo_zhi`, `hive_blue_mouth_rear`, ...). Mouths are floor-plane only.
+  `custom_<name>` ids have no coordinates in `alea.game`; `calibrate` ignores them with a warning.
 - `geometry.py`: numpy-only camera model. Floor homography (normalised DLT, at least 4
   non-collinear floor points) -> pinhole (f, R, position; square pixels, centred principal
   point) -> Levenberg-Marquardt refinement over all landmarks. Per-point and leave-one-out

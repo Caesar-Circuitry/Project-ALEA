@@ -21,6 +21,7 @@ KIND_FIELD_CORNER = "field_corner"
 KIND_WALL_TOP = "wall_top"
 KIND_HIVE_PIVOT = "hive_pivot"
 KIND_HIVE_FRAME = "hive_frame"
+KIND_HIVE_MOUTH = "hive_mouth"  # floor-plane use only (z unknown without CAD)
 
 _FLOOR_TOL_IN = 1e-9
 
@@ -44,38 +45,40 @@ class Landmark:
         return abs(self.z_in) <= _FLOOR_TOL_IN
 
 
-def _fmt(value_in: float) -> str:
-    """Compact coordinate for a name: 141.3 -> '141', 46 -> '46'."""
-    return str(round(value_in))
-
-
 def _build() -> dict[str, Landmark]:
+    """Ids follow the click log's convention (alea/video/landmark_ids.py on feature/2-click-log)."""
     out: dict[str, Landmark] = {}
+    size_in = g.FIELD_SIZE_IN
+    corners = (
+        ("xlo", "ylo", 0.0, 0.0),
+        ("xlo", "yhi", 0.0, size_in),
+        ("xhi", "ylo", size_in, 0.0),
+        ("xhi", "yhi", size_in, size_in),
+    )
 
     def add(lm: Landmark) -> None:
-        if lm.name in out:  # pragma: no cover - guards against future constant edits
-            raise ValueError(f"duplicate landmark name {lm.name}")
         out[lm.name] = lm
 
-    size_in = g.FIELD_SIZE_IN
-    for x_in, y_in in product((0.0, size_in), repeat=2):
-        tag = f"x{_fmt(x_in)}_y{_fmt(y_in)}"
-        add(Landmark(f"field_corner_{tag}_z0", x_in, y_in, 0.0, KIND_FIELD_CORNER))
-    for x_in, y_in in product((0.0, size_in), repeat=2):
-        tag = f"x{_fmt(x_in)}_y{_fmt(y_in)}"
-        add(Landmark(f"wall_top_{tag}", x_in, y_in, g.WALL_HEIGHT_IN, KIND_WALL_TOP))
+    for xs, ys, x_in, y_in in corners:
+        add(Landmark(f"field_floor_corner_{xs}_{ys}", x_in, y_in, 0.0, KIND_FIELD_CORNER))
+    for xs, ys, x_in, y_in in corners:
+        name = f"field_wall_top_corner_{xs}_{ys}"
+        add(Landmark(name, x_in, y_in, g.WALL_HEIGHT_IN, KIND_WALL_TOP))
     for team, x_in in zip(("red", "blue"), g.HIVE_X_IN, strict=True):
-        add(
-            Landmark(
-                f"hive_pivot_{team}", x_in, g.HIVE_Y_IN, g.HIVE_PIVOT_HEIGHT_IN, KIND_HIVE_PIVOT
-            )
-        )
-    xs_in = (g.FRAME_X0_IN, g.FRAME_X0_IN + g.FRAME_NX)
-    ys_in = (g.FRAME_Y0_IN, g.FRAME_Y0_IN + g.FRAME_NY)
-    zs_in = (g.FRAME_Z0_IN, g.FRAME_Z0_IN + g.FRAME_NZ)
-    for x_in, y_in, z_in in product(xs_in, ys_in, zs_in):
-        name = f"hive_frame_x{_fmt(x_in)}_y{_fmt(y_in)}_z{_fmt(z_in)}"
+        z_in = g.HIVE_PIVOT_HEIGHT_IN
+        add(Landmark(f"hive_{team}_pivot", x_in, g.HIVE_Y_IN, z_in, KIND_HIVE_PIVOT))
+    lo_hi = (
+        (("xlo", g.FRAME_X0_IN), ("xhi", g.FRAME_X0_IN + g.FRAME_NX)),
+        (("ylo", g.FRAME_Y0_IN), ("yhi", g.FRAME_Y0_IN + g.FRAME_NY)),
+        (("zlo", g.FRAME_Z0_IN), ("zhi", g.FRAME_Z0_IN + g.FRAME_NZ)),
+    )
+    for (xs, x_in), (ys, y_in), (zs, z_in) in product(*lo_hi):
+        name = f"hive_frame_corner_{xs}_{ys}_{zs}"
         add(Landmark(name, float(x_in), float(y_in), float(z_in), KIND_HIVE_FRAME))
+    mouths = (("audience", g.HIVE_AUDIENCE_MOUTH_Y_IN), ("rear", g.HIVE_REAR_MOUTH_Y_IN))
+    for team, x_in in zip(("red", "blue"), g.HIVE_X_IN, strict=True):
+        for mouth, y_in in mouths:
+            add(Landmark(f"hive_{team}_mouth_{mouth}", x_in, y_in, 0.0, KIND_HIVE_MOUTH))
     return out
 
 
@@ -92,6 +95,11 @@ def get_landmark(name: str) -> Landmark:
         return _TABLE[name]
     except KeyError:
         raise KeyError(f"unknown landmark {name!r}; known: {', '.join(_TABLE)}") from None
+
+
+def is_custom_id(name: str) -> bool:
+    """`custom_<name>` marks (tile seams, tape) have no coordinates in alea.game yet."""
+    return name.startswith("custom_")
 
 
 def floor_landmarks() -> list[Landmark]:
