@@ -129,6 +129,113 @@ it is missing, stop and ask.
 - Delete `_incoming/`; no file over 1 MB outside `tests/golden/`.
 - Done when: the end-to-end checks in the setup plan pass from a fresh clone.
 
+### Phase 2: video review
+
+Phase 2 is done when an operator takes a recording of one of our matches and the robot's log,
+and gets a CSV of per-launch exit speed with an uncertainty and launcher efficiency, using only
+`python -m alea.video`. The accuracy is proven on synthetic cameras in `tests/`. No real footage
+is committed. Tracking stays optional and GPU-only. Design: decision 0008.
+
+Inputs: the team has no recording of its own yet, so the FTC livestream is the starting footage.
+The launcher is the StarterBot: 1:1 drive, 28 ticks per revolution, 1.89 in wheel radius.
+
+Every phase 2 PR also meets the setup rules: `pathlib`, units in names, a `README.md` in every
+new folder, no file over 1 MB outside `tests/golden/`, no footage or secrets in git, and
+`just lint` and `just test` green. Agents run shell work through `just dev`.
+
+### 2.0: roadmap and decision record (`docs/2-video-plan`)
+- Deliver: this phase 2 section; decision 0008 (full camera model over a floor homography, raw
+  clicks as truth, JSONL before a database, GPU tracking behind a dependency group); the phase 2
+  lines in `alea/video/README.md` and `docs/README.md`; 0008 in `mkdocs.yml` and
+  `docs/decisions/README.md`.
+- Done when: `just docs` is clean and this roadmap names every 2.x stage with its done-when list.
+- Blocked on: nothing. PRs #38 and #39 are merged.
+
+### 2.1: camera geometry (`feature/2-camera-geometry`)
+- Deliver: `alea/video/landmarks.py`, named 3D field landmarks built only from
+  `alea.game.biobuzz` (field corners at z = 0 and at the wall top, hive pivots, hive frame
+  corners that are occupied); `alea/video/geometry.py`, with `fit_homography` (floor, at least 4
+  points, normalised DLT), `camera_from_homography` (focal length, rotation, position; square
+  pixels, centred principal point), `refine_camera` (Gauss-Newton on floor and off-floor points),
+  `project`, `ray`, `point_on_plane_z`, per-landmark and leave-one-out residuals, a floor
+  uncertainty ellipse per point and degeneracy warnings; `alea/video/calibration.py`, the
+  `Calibration` dataclass with JSON read and write and a `schema_version`.
+- Tests: `tests/test_video_geometry.py`, `tests/test_video_landmarks.py`.
+- Done when: on a synthetic 1080p broadcast camera with 10 landmarks and 1 px click noise, RMS
+  reprojection is at most 1.5 px, floor position error at most 2 in, focal length within 3 %, and
+  a point at z = 49 in within 2 in; fewer than 4 floor points, or collinear floor points, raise;
+  the suite stays green without the `video` extra (`pytest.importorskip("cv2")`).
+- Blocked on: 2.0 merged.
+
+### 2.2: click log and review UI (`feature/2-click-log`)
+- Deliver: `alea/video/frames.py`, `VideoReader` over `cv2.VideoCapture` (fps, frame count, seek
+  by frame index, presentation time of each frame); `alea/video/clicklog.py`, `ShotObservation`
+  with JSONL read and write and flat CSV export (`launches.csv`, `track_points.csv`);
+  `alea/video/review.py` and `alea/video/__main__.py`, a matplotlib UI run as
+  `python -m alea.video review <video> --calibration cal.json --out shots.jsonl`, with keyboard
+  modes for calibrate, robot, launch, ball track, landing and outcome, plus undo and autosave
+  after every record; the manual checklist goes in `alea/video/README.md`.
+- Tests: `tests/test_video_clicklog.py`, `tests/test_video_frames.py`,
+  `tests/test_video_review_ui.py`.
+- Done when: a schema round-trip passes and a mismatched `schema_version` is rejected; a 30-frame
+  MJPG clip written at test time reads back with 30 frames and seeks to frame 17; the UI state
+  machine passes injected matplotlib events on the Agg backend; the user has run the manual
+  checklist on a local clip.
+- Blocked on: 2.0 merged. Can run in parallel with 2.1 in a separate worktree.
+
+### 2.3: ballistic fit, sync and efficiency (`feature/2-shot-fit`)
+- Deliver: `alea/video/ballistics.py`, an image-space fit (unknowns: flight heading, launch
+  point, two velocity components; gravity from `alea.game`; frame presentation times), soft
+  priors from the log heading and the robot click, exit speed at the launcher-exit height with a
+  1-sigma uncertainty, a linear-drag correction with `alea.game.AIR_DRAG`, and a ray-and-plane
+  quick look as the starting guess; `alea/video/sync.py`, the offset between video time and log
+  `t_s` from clicked launches and `alea.data.launches` results (1 ms scan, plus or minus 50 ms
+  window, median refinement), a manual anchor fallback and an odometry cross-check;
+  `alea/video/efficiency.py`, `efficiency_op` and `efficiency_phys` joined to `Launch` rows,
+  written to `launches.csv`; and `python -m alea.video analyze shots.jsonl --log match.rlog
+  --calibration cal.json`.
+- Tests: `tests/test_video_ballistics.py`, `tests/test_video_sync.py`,
+  `tests/test_video_efficiency.py`, `tests/test_video_end_to_end.py`. `/code-review` on the
+  estimator.
+- Done when: on 200 seeded synthetic trajectories at 30 fps, with 10 clicks, 1 px noise and a
+  side-on camera, every exit-speed error is at most 3 % and the bias over the 200 is at most
+  0.5 % (at most 6 % per trial at 2 px noise); the empirical scatter is within plus or minus 30 %
+  of the predicted sigma; the degenerate view (ray within 10 degrees of the flight plane, 3 degree
+  heading error) raises the warning and still fits within 3 %; sync recovers a known offset
+  within 20 ms with one missed and one spurious launch; `launches.csv` has one row per launch with
+  units in its column names.
+- Blocked on: 2.1 and 2.2 merged.
+
+### 2.4: operator guide (`docs/2-operator-guide`)
+- Deliver: `docs/video-review.md` (what to record, which landmarks to click, the modes, what the
+  CSV columns mean); a landmark diagram rendered from `alea.game` into `docs/assets/`
+  (`field-landmarks.png`, well under 1 MB) by a script in `alea/video/tools/`; the nav entry in
+  `mkdocs.yml`; the video line in `docs/knowledge-base.md` updated; `notebooks/video_review.py`
+  (jupytext) plotting efficiency from synthetic data.
+- Done when: `just docs` is clean, and a new operator can calibrate and log a synthetic clip
+  from the guide alone.
+- Blocked on: 2.3 merged.
+
+### 2.5: video database (`feature/2-video-db`, later)
+- Deliver: Alembic `0003_video.py` with `video_file`, `camera_calibration`, `shot_observation`,
+  `ball_track_point` and `video_sync`; the edits to `alea/data/models.py` and `cli.py`;
+  `python -m alea.data import-video shots.jsonl`; `alea/data/README.md` updated.
+- Tests: `tests/test_video_db.py`.
+- Done when: a JSONL from 2.2 and 2.3 imports and joins to `launch` rows, and re-import is
+  idempotent (matched on sha256 and observation id).
+- Blocked on: the user's go-ahead after the first real match is logged.
+
+### 2.6: GPU tracking (`feature/2-tracking`, separate approval)
+- Deliver: a uv dependency group `track` (torch, SAM 2) with Linux x86-64 platform markers, kept
+  out of `just sync`, `--all-extras` and CI; `alea/video/track.py`, where SAM 2, seeded by the
+  operator's first ball click, fills `ball_track` with `source: "sam2"`; `@pytest.mark.gpu`
+  tests; a note in `hpc/brev/README.md`. Later: a detector for automatic launch detection.
+- Tests: `tests/test_video_track_gpu.py`.
+- Done when: on a GPU machine, a tracked ball matches hand clicks within one ball radius on a
+  held-out clip; the CPU path is unchanged.
+- Blocked on: the user's approval of the `uv.lock` change and of any GPU spend. Runs under the
+  orchestrator only after its own approval.
+
 ## After setup: project phases
 
 Each `alea/` subfolder belongs to a phase; its README says which.
@@ -138,7 +245,7 @@ Each `alea/` subfolder belongs to a phase; its README says which.
 | 0 | Data contract | `robot/`, `alea/data/` | Every robot log and match result lands in one database |
 | 1 | Shot simulator | `alea/sim/`, `alea/game/`, `conf/`, `hpc/` | Monte Carlo studies on Brev GPUs, results in notebooks |
 | 1b | High fidelity | `alea/hifi/` | Port dsim hive tipping and ball contacts, validated against dsim traces |
-| 2 | Video review | `alea/video/` | Field homography, click-and-log, then tracking |
+| 2 | Video review | `alea/video/` | Camera calibration from field landmarks, click-and-log, exit speed and efficiency; tracking last, GPU only |
 | 3-5 | Analysis | `alea/analysis/` | Calibrate the sim on real shots, driver critique, robot health |
 | 6 | Web app | `alea/web/` | Streamlit for the team, FastAPI service later |
 | 7 | Match simulation | `alea/matchsim/` | Full auto and match simulation on top of the shot sim |
