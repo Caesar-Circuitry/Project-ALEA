@@ -46,7 +46,7 @@ class Landmark:
 
 def _fmt(value_in: float) -> str:
     """Compact coordinate for a name: 141.3 -> '141', 46 -> '46'."""
-    return str(int(round(value_in)))
+    return str(round(value_in))
 
 
 def _build() -> dict[str, Landmark]:

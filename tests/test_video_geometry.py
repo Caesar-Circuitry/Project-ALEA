@@ -124,7 +124,7 @@ def test_noise_two_pixels_still_sane() -> None:
 
 def test_floor_only_is_flagged_unrefined() -> None:
     cam = CAMERAS["audience"]
-    names = NAMES[:4] + ["hive_frame_x46_y51_z0", "hive_frame_x96_y91_z0"]
+    names = [*NAMES[:4], "hive_frame_x46_y51_z0", "hive_frame_x96_y91_z0"]
     fit = fit_camera(landmarks_xyz_in(names), clicks(cam, names, 0.0, 0), W, H)
     assert fit.model == "pinhole_from_homography"
     assert any("unrefined" in w for w in fit.warnings)
@@ -193,28 +193,107 @@ def test_floor_ellipse_depth_worse_than_lateral() -> None:
     assert abs(e.angle_deg - 90) < 10  # depth axis is along +y for this camera
 
 
+def _clicks(cam, names, sigma_px, seed, frame=None):
+    px = clicks(cam, names, sigma_px, seed)
+    return [
+        ClickedLandmark(n, float(u), float(v), frame) for n, (u, v) in zip(names, px, strict=True)
+    ]
+
+
 def test_calibration_roundtrip(tmp_path) -> None:
     cam = CAMERAS["audience"]
-    px = clicks(cam, NAMES, 1.0, 1)
-    cl = [ClickedLandmark(n, float(u), float(v)) for n, (u, v) in zip(NAMES, px, strict=True)]
-    cal = calibrate(cl, VideoInfo("Q12.mp4", "abc", W, H, 29.97, 100), (0, 100), "ab")
+    cl = _clicks(cam, NAMES, 1.0, 1, frame=10)
+    info = VideoInfo("Q12.mp4", "abc", W, H, 29.97, 100)
+    cal = calibrate(cl, info, (0, 100), "ab", camera_setup_id="USALTX-aud")
     path = tmp_path / "cal.json"
     write_calibration(cal, path)
     back = read_calibration(path)
     assert isinstance(back, Calibration)
-    assert back.model == "pinhole_refined" and back.landmarks == cl
+    assert back.model == "pinhole_refined" and back.landmarks == cal.landmarks
+    assert back.camera_setup_id == "USALTX-aud" and back.landmark_ids == sorted(NAMES)
     assert back.camera is not None and cal.camera is not None
     assert np.allclose(back.camera.rotation, cal.camera.rotation)
     assert back.floor_point_in(W / 2, H / 2) == pytest.approx(cal.floor_point_in(W / 2, H / 2))
     assert back.max_floor_in is not None and back.max_floor_in > 0
-    assert set(back.residuals_px) == set(NAMES)
+    assert all(c.residual_px is not None for c in back.landmarks)
+    # with exactly 4 floor corners, leaving one out leaves 3: no leave-one-out for those
+    assert all(c.loo_residual_px is not None for c in back.landmarks if c.name[0] != "f")
+    assert all(c.loo_residual_px is None for c in back.landmarks if c.name[0] == "f")
+    floor = [c for c in back.landmarks if c.name.startswith("field_corner")]
+    assert all(c.floor_major_in and c.floor_minor_in for c in floor)
+    assert all(c.floor_major_in is None for c in back.landmarks if c.name.startswith("wall"))
 
 
-def test_calibration_rejects_bad_schema_and_duplicates(tmp_path) -> None:
+def test_bad_schema_and_empty(tmp_path) -> None:
     path = tmp_path / "bad.json"
     path.write_text('{"schema_version": 99}', encoding="utf-8")
     with pytest.raises(ValueError, match="schema_version"):
         read_calibration(path)
-    dup = [ClickedLandmark(NAMES[0], 1, 1), ClickedLandmark(NAMES[0], 2, 2)]
-    with pytest.raises(GeometryError, match="more than once"):
-        calibrate(dup, VideoInfo())
+    with pytest.raises(GeometryError, match="no landmark"):
+        calibrate([], VideoInfo())
+
+
+# --- one independent calibration per event / camera setup
+
+EVENTS = {
+    "wide_audience": look_at([70, -400, 120], CENTRE, 1660),
+    "tele_far": look_at([-100, -600, 200], CENTRE, 3000),
+    "corner_wide": look_at([-250, -250, 140], CENTRE, 1200),
+    "high_end_zoomed": look_at([300, 70, 260], CENTRE, 2200),
+}
+
+
+@pytest.mark.parametrize("event", list(EVENTS))
+def test_each_event_fits_independently(event: str) -> None:
+    cam = EVENTS[event]
+    cal = calibrate(_clicks(cam, NAMES, 1.0, 5), VideoInfo(width_px=W, height_px=H))
+    assert cal.camera is not None
+    assert cal.camera.f_px == pytest.approx(cam.f_px, rel=0.06)
+    dist = np.linalg.norm(cam.position_in - CENTRE)
+    assert np.linalg.norm(cal.camera.position_in - cam.position_in) < 0.1 * dist
+    assert cal.rms_reprojection_px < 2.0
+
+
+SUBSETS = {
+    "corners_and_walls": NAMES[:8],
+    "hive_heavy": [
+        *NAMES[:4],
+        "hive_pivot_red",
+        "hive_pivot_blue",
+        "hive_frame_x46_y51_z45",
+        "hive_frame_x96_y91_z45",
+        "hive_frame_x96_y51_z45",
+    ],
+    "near_half_only": [
+        NAMES[0],
+        NAMES[1],
+        "wall_top_x0_y0",
+        "wall_top_x141_y0",
+        "hive_frame_x46_y51_z0",
+        "hive_frame_x96_y51_z0",
+        "hive_pivot_red",
+    ],
+}
+
+
+@pytest.mark.parametrize("subset", list(SUBSETS))
+def test_varying_landmark_subsets(subset: str) -> None:
+    cam = CAMERAS["audience"]
+    names = SUBSETS[subset]
+    errs = []
+    for seed in range(10):
+        cal = calibrate(_clicks(cam, names, 0.7, seed), VideoInfo(width_px=W, height_px=H))
+        assert cal.camera is not None
+        u, v = cam.project([70, 70, 0.0])[0]
+        errs.append(np.linalg.norm(np.array(cal.floor_point_in(u, v)) - np.array([70, 70])))
+    assert np.mean(errs) < 3.0
+
+
+def test_pooling_clicks_from_several_frames() -> None:
+    cam = CAMERAS["audience"]
+    first = _clicks(cam, NAMES[:6], 1.0, 1, frame=100)
+    second = _clicks(cam, [*NAMES[2:8], "hive_pivot_red"], 1.0, 2, frame=900)  # overlap allowed
+    cal = calibrate(first + second, VideoInfo(width_px=W, height_px=H))
+    assert cal.camera is not None and len(cal.landmarks) == 13
+    assert {c.frame for c in cal.landmarks} == {100, 900}
+    assert cal.camera.f_px == pytest.approx(F, rel=0.05)

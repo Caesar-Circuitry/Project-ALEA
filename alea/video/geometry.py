@@ -12,7 +12,7 @@ measured from the top-left corner; the principal point defaults to (width/2, hei
 from dataclasses import dataclass, field
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
 from alea.game import biobuzz as g
 
@@ -62,7 +62,7 @@ class Camera:
     cx_px: float
     cy_px: float
 
-    def project(self, xyz_in: Array) -> Array:
+    def project(self, xyz_in: "ArrayLike") -> Array:
         """Pixels (N, 2) for world points (N, 3) or (3,). Points behind the camera give nan."""
         pts = np.atleast_2d(np.asarray(xyz_in, dtype=np.float64))
         cam = (pts - self.position_in) @ self.rotation.T
@@ -210,9 +210,7 @@ def _residual(cam0: Camera, p: Array, world: Array, pixels: Array) -> Array:
     return np.where(np.isfinite(r), r, 1e6)
 
 
-def refine_camera(
-    camera: Camera, world_in: Array, pixels_px: Array, max_iter: int = 100
-) -> Camera:
+def refine_camera(camera: Camera, world_in: Array, pixels_px: Array, max_iter: int = 100) -> Camera:
     """Levenberg-Marquardt (damped Gauss-Newton) over f, rotation and position."""
     world = np.asarray(world_in, dtype=np.float64).reshape(-1, 3)
     pixels = np.asarray(pixels_px, dtype=np.float64).reshape(-1, 2)
@@ -318,7 +316,7 @@ def _predict(fit_cam: Camera | None, h: Array, world: Array) -> Array:
 
 
 def _solve(
-    world: Array, pixels: Array, width_px: int, height_px: int, floor: Array
+    world: Array, pixels: Array, width_px: int, height_px: int, floor: NDArray[np.bool_]
 ) -> tuple[Camera | None, Array]:
     h = fit_homography(world[floor, :2], pixels[floor])
     try:

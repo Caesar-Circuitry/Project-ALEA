@@ -7,7 +7,7 @@ The JSON keeps the raw clicks so a better fit never needs re-clicking. Schema in
 import json
 import math
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -27,9 +27,18 @@ SCHEMA_VERSION = 1
 
 @dataclass(frozen=True)
 class ClickedLandmark:
+    """One click on a named landmark. The camera is static within a video, so clicks from
+    several frames (`frame`) pool into one fit, and a landmark may appear more than once."""
+
     name: str
     u_px: float
     v_px: float
+    frame: int | None = None
+    residual_px: float | None = None  # filled by `calibrate`
+    loo_residual_px: float | None = None
+    floor_major_in: float | None = None  # 1-sigma floor ellipse (floor landmarks only)
+    floor_minor_in: float | None = None
+    floor_angle_deg: float | None = None
 
 
 @dataclass
@@ -52,13 +61,18 @@ class Calibration:
     rms_reprojection_px: float
     max_loo_residual_px: float | None
     max_floor_in: float | None
-    residuals_px: dict[str, float] = field(default_factory=dict)
-    loo_residuals_px: dict[str, float | None] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     valid_frames: tuple[int, int] = (0, 0)
+    camera_setup_id: str = ""  # e.g. event code + camera position; one calibration per setup
     calibration_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     operator: str = ""
-    created_at: str = field(default_factory=lambda: datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"))
+    created_at: str = field(
+        default_factory=lambda: datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    )
+
+    @property
+    def landmark_ids(self) -> list[str]:
+        return sorted({c.name for c in self.landmarks})
 
     def floor_point_in(self, u_px: float, v_px: float, z_in: float = 0.0) -> tuple[float, float]:
         """Field (x_in, y_in) of a pixel assumed to lie at height z_in."""
@@ -83,17 +97,15 @@ class Calibration:
                 "frame_count": self.video.frame_count,
             },
             "valid_frames": list(self.valid_frames),
-            "landmarks": [
-                {"name": c.name, "u_px": c.u_px, "v_px": c.v_px} for c in self.landmarks
-            ],
+            "camera_setup_id": self.camera_setup_id,
+            "landmark_ids": self.landmark_ids,
+            "landmarks": [asdict(c) for c in self.landmarks],
             "model": self.model,
             "camera": self.camera.to_dict() if self.camera else None,
             "homography_floor": self.homography_floor,
             "rms_reprojection_px": self.rms_reprojection_px,
             "max_loo_residual_px": self.max_loo_residual_px,
             "max_floor_in": self.max_floor_in,
-            "residuals_px": self.residuals_px,
-            "loo_residuals_px": self.loo_residuals_px,
             "warnings": self.warnings,
             "operator": self.operator,
             "created_at": self.created_at,
@@ -116,15 +128,14 @@ class Calibration:
                 fps_nominal=float(v["fps_nominal"]),
                 frame_count=int(v["frame_count"]),
             ),
-            landmarks=[ClickedLandmark(c["name"], c["u_px"], c["v_px"]) for c in d["landmarks"]],
+            landmarks=[ClickedLandmark(**c) for c in d["landmarks"]],
+            camera_setup_id=d.get("camera_setup_id", ""),
             model=d["model"],
             camera=Camera.from_dict(d["camera"]) if d["camera"] else None,
             homography_floor=d["homography_floor"],
             rms_reprojection_px=d["rms_reprojection_px"],
             max_loo_residual_px=d["max_loo_residual_px"],
             max_floor_in=d["max_floor_in"],
-            residuals_px=d.get("residuals_px", {}),
-            loo_residuals_px=d.get("loo_residuals_px", {}),
             warnings=list(d["warnings"]),
             valid_frames=(int(d["valid_frames"][0]), int(d["valid_frames"][1])),
             calibration_id=d["calibration_id"],
@@ -143,36 +154,39 @@ def calibrate(
     valid_frames: tuple[int, int] = (0, 0),
     operator: str = "",
     sigma_px: float = 1.0,
+    camera_setup_id: str = "",
 ) -> Calibration:
-    """Fit a camera to clicked landmarks and return the full calibration record."""
-    if len({c.name for c in clicks}) != len(clicks):
-        raise GeometryError("a landmark was clicked more than once")
+    """Fit ONE static camera to clicked landmarks (any visible subset, possibly pooled from
+    several frames of the same video) and return the calibration record."""
+    if not clicks:
+        raise GeometryError("no landmark clicks")
     world = landmarks_xyz_in([c.name for c in clicks])
     pixels = np.array([[c.u_px, c.v_px] for c in clicks], dtype=np.float64)
     fit = fit_camera(world, pixels, video.width_px, video.height_px)
-    max_floor_in: float | None = None
-    if fit.camera is not None:
-        majors = [
-            floor_ellipse(fit.camera, c.u_px, c.v_px, sigma_px).major_in
-            for c in clicks
-            if get_landmark(c.name).on_floor
-        ]
-        max_floor_in = float(max(majors))
+    out: list[ClickedLandmark] = []
+    for c, r, loo in zip(clicks, fit.residuals_px, fit.loo_residuals_px, strict=True):
+        extra: dict[str, float | None] = {}
+        if fit.camera is not None and get_landmark(c.name).on_floor:
+            e = floor_ellipse(fit.camera, c.u_px, c.v_px, sigma_px)
+            extra = {
+                "floor_major_in": e.major_in,
+                "floor_minor_in": e.minor_in,
+                "floor_angle_deg": e.angle_deg,
+            }
+        out.append(replace(c, residual_px=float(r), loo_residual_px=_finite_or_none(loo), **extra))
+    majors = [c.floor_major_in for c in out if c.floor_major_in is not None]
     return Calibration(
         video=video,
-        landmarks=list(clicks),
+        landmarks=out,
         model=fit.model,
         camera=fit.camera,
         homography_floor=fit.homography.tolist(),
         rms_reprojection_px=fit.rms_px,
         max_loo_residual_px=_finite_or_none(fit.max_loo_px),
-        max_floor_in=max_floor_in,
-        residuals_px={c.name: float(r) for c, r in zip(clicks, fit.residuals_px, strict=True)},
-        loo_residuals_px={
-            c.name: _finite_or_none(r) for c, r in zip(clicks, fit.loo_residuals_px, strict=True)
-        },
+        max_floor_in=float(max(majors)) if majors else None,
         warnings=list(fit.warnings),
         valid_frames=valid_frames,
+        camera_setup_id=camera_setup_id,
         operator=operator,
     )
 
