@@ -199,7 +199,20 @@ new folder, no file over 1 MB outside `tests/golden/`, no footage or secrets in 
   clip.
 - Blocked on: 2.0 merged. Can run in parallel with 2.1 in a separate worktree.
 
+### 2.2b: match segmenter and overlay events (`feature/2-segment-schema`, `feature/2-overlay-reader`)
+- Deliver: on `feature/2-segment-schema`, `alea/video/segments.py`, a JSON schema for match
+  segments (match start and end, in seconds from the video's presentation timestamps) with read
+  and write. On `feature/2-overlay-reader`, `alea/video/overlay.py`, which reads the on-screen
+  score and tip events from a broadcast overlay. Both branches stack on `feature/2-click-log`.
+  Decision 0012.
+- Tests: `tests/test_video_segments.py`, `tests/test_video_overlay.py`, on a synthetic stream
+  made at test time.
+- Done when: on a synthetic stream every match start and end is within 1.5 s of the truth, the
+  overlay tip events are recovered, and no real footage is committed.
+- Blocked on: 2.2 merged (both branches stack on `feature/2-click-log`). No real footage needed.
+
 ### 2.3: ballistic fit, sync and efficiency (`feature/2-shot-fit`)
+**Deprioritised, see decision 0009.** Calibration moves to the hive-shot-lab track in phase 3.
 - Deliver: `alea/video/ballistics.py`, an image-space fit (unknowns: flight heading, launch
   point, two velocity components; gravity from `alea.game`; frame presentation times), soft
   priors from the log heading and the robot click, exit speed at the launcher-exit height with a
@@ -251,6 +264,122 @@ new folder, no file over 1 MB outside `tests/golden/`, no footage or secrets in 
   held-out clip; the CPU path is unchanged.
 - Blocked on: the user's approval of the `uv.lock` change and of any GPU spend. Runs under the
   orchestrator only after its own approval.
+
+### Re-scope 2026-11-08
+Video review is now mainly for post-match reflection. A model reviews a match from the robot
+logs, an overlay score timeline and a simulation baseline, and says what the drivers could have
+improved. Launcher calibration is a separate, controlled track: a human slow-motion test, analysed
+with the external tool hive-shot-lab (phase 3). Stage 2.3 is deprioritised. Phases 5, 6 and 7 get
+their first stages. Reports are text and JSON only; no frames leave the machine. Data missing from
+a report is tagged `inferred`. See decision 0009.
+
+Every stage below runs on CPU with synthetic data. A large sweep goes on the GPU queue as its own
+entry. Game point values are not in `alea/game/` yet; branches use documented placeholders until
+a physics-reviewed PR adds them (open decision for the user).
+
+Follow-up, not scheduled: `feature/2-field-extraction` (decision 0013). A local model extracts
+field state from video (field mask, background model, robots, balls). A large model interprets it
+and fills gaps as `inferred`. Blocked on a feasibility spike and the user's go-ahead.
+
+### Phase 3-5: analysis
+
+Phases 3 to 5 read robot logs and measured shots. They never change the frozen shot sim files.
+
+#### 3.1: hive-shot-lab import (`feature/3-hivelab-import`)
+- Deliver: `alea/analysis/hivelab.py`, an importer for the CSV that hive-shot-lab exports. The
+  tool is external (Apache-2.0, v1.0.0) and is not vendored. The importer syncs video and log by
+  a shared cue, or by matching burst gaps as a fallback. Measurement rows go to a separate file,
+  `measurements.csv`. They never go into the launch table. Command:
+  `python -m alea.analysis hivelab-import <csv> --log <log> --out measurements.csv`.
+- Tests: `tests/test_analysis_hivelab.py`, on a synthetic CSV and a synthetic log.
+- Done when: the synthetic CSV and log import with every shot matched to its cue; one missed and
+  one spurious shot are reported, not dropped; a test shows the launch table is unchanged.
+- Blocked on: nothing.
+
+#### 3.2: efficiency estimate (`feature/3-efficiency-estimate`)
+- Deliver: `alea/analysis/efficiency.py`, a bootstrap or Bayes estimate of launcher efficiency
+  and of the drag term, from `measurements.csv`, with intervals. Efficiency is
+  `v_exit_in_s / (flywheel_ticks_per_s / 28 * 2 * pi * 1.89)`. The estimate is compared with the
+  sim's assumed 0.45 and with `AIR_DRAG` from `alea.game`. Output is a calibration report in text
+  and JSON.
+- Tests: `tests/test_analysis_efficiency.py`, on seeded synthetic shots with a known efficiency.
+- Done when: on 100 seeded synthetic data sets, the 95 % interval covers the true efficiency in
+  at least 93 of them; the report states whether 0.45 falls inside the interval.
+- Blocked on: 3.1 merged. Any large seed sweep goes on the GPU queue.
+
+#### 3.3: calibration protocol (`docs/calibration-protocol.md`, branch `docs/2-rescope`)
+- Deliver: `docs/calibration-protocol.md`, the human slow-motion test for students and mentors:
+  equipment, setup, filming checklist, sync cue, session sheet, file naming, the hive-shot-lab
+  export, the import command, the efficiency formula, safety, privacy and troubleshooting. A nav
+  entry under Guides.
+- Tests: `just docs` (strict build).
+- Done when: `just docs` is clean and a mentor can run one session from the page alone.
+- Blocked on: nothing.
+
+#### 4.1: driver critique (`feature/4-driver-critique`)
+- Deliver: `alea/analysis/critique.py`, from robot logs only: cycle times, idle gaps between
+  launches, shot cadence, and flywheel readiness (time from setpoint to ready before each launch).
+  Output is a per-match CSV and a JSON summary, with units in the column names.
+- Tests: `tests/test_analysis_critique.py`, on synthetic logs with planted idle gaps.
+- Done when: every planted gap longer than 1.0 s is listed, and no other gap is.
+- Blocked on: nothing. No video needed.
+
+#### 5.1: match reflection (`feature/5-match-reflection`)
+- Deliver: `alea/analysis/reflection.py`, a match timeline from the robot logs, the overlay
+  score events from 2.2b and the sim baseline. It also writes the model prompt and a text and JSON
+  report. Decision 0011 sets the prompt and report format. The prompt carries no image data.
+  Missing items are tagged `inferred`.
+- Tests: `tests/test_analysis_reflection.py`: the prompt has no image bytes; each missing item is
+  tagged `inferred`; the JSON matches the report schema.
+- Done when: a synthetic match gives a timeline and a report where every number names its source
+  key, and a test fails if image bytes reach the prompt.
+- Blocked on: 2.2b and 4.1 merged. The first live model call needs the user's go-ahead.
+
+### Phase 6: web app
+
+Streamlit, in `alea/web/`. The `web` extra already exists, so there is no dependency change.
+
+#### 6.1: web skeleton (`feature/6-web-skeleton`)
+- Deliver: `alea/web/app.py`, a Streamlit app with a shot-study explorer (reads `results/`) and a
+  match and log viewer (reads the phase 0 database).
+- Tests: `tests/test_web_smoke.py`, with `pytest.importorskip("streamlit")`, on a synthetic
+  database.
+- Done when: the app starts from a fresh clone and shows one study and one synthetic match.
+- Blocked on: nothing beyond phase 0, which is merged.
+
+#### 6.2: web video pages (`feature/6-web-video-pages`)
+- Deliver: a read-only click-log viewer and calibration viewer in `alea/web/`. They read the
+  JSONL click log and the calibration JSON. They never show footage.
+- Tests: `tests/test_web_video.py`, on a synthetic click log.
+- Done when: the viewer shows every record of the synthetic click log, and the calibration
+  residuals.
+- Blocked on: 2.2 and 6.1 merged.
+
+#### 6.3: web reflection and efficiency (`feature/6-web-reflection-efficiency`)
+- Deliver: a reflection report viewer (from 5.1) and a launcher-efficiency tracker over sessions
+  (from 3.2).
+- Tests: `tests/test_web_reflection.py`.
+- Done when: the tracker plots efficiency per session with its interval and a line at 0.45, and
+  the report viewer shows every `inferred` item in its own style.
+- Blocked on: 3.2, 5.1 and 6.1 merged.
+
+### Phase 7: match simulation
+
+#### 7.1: match simulator core (`feature/7-matchsim-core`)
+- Deliver: `alea/matchsim/core.py`, an abstract cycle-based match simulator on top of the shot
+  sim. It has a pluggable shot-success model and a placeholder points table, documented in the
+  branch and not in `alea/game/` (decision 0010). Every run is seeded.
+- Tests: `tests/test_matchsim_core.py`.
+- Done when: the same seed gives the same match; a match with no shots scores zero; every output
+  labels the points table as a placeholder.
+- Blocked on: nothing for placeholder runs. Real point values wait on the user's decision.
+
+#### 7.2: match search (`feature/7-matchsim-search`)
+- Deliver: `alea/matchsim/search.py`, a generic seeded optimiser for match plans. It has random
+  search, grid search and cross-entropy.
+- Tests: `tests/test_matchsim_search.py`, on a toy objective with a known maximum.
+- Done when: each of the three methods finds the toy maximum within tolerance on fixed seeds.
+- Blocked on: 7.1 merged.
 
 ## After setup: project phases
 
