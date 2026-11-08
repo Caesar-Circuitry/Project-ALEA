@@ -10,7 +10,8 @@ Keys (all matplotlib ``keymap.*`` defaults are cleared while the review window i
     left/right  step 1 frame        down/up        step 10 frames
     pagedown/pageup  step 100       home/end       first/last frame
     c landmarks  r robot  l launch  b ball track  d landing  o outcome   (modes)
-    [ ] previous / next landmark id (landmarks mode; click the point in the frame)
+    [ ] previous / next landmark id, including edge_* ids (landmarks mode; click the point, or
+        for an edge any point along it; add several points per edge)
     t toggle robot click kind (top plate / floor contact)
     1..6 landing kind: floor, hive_cell, hive_frame, wall, out_of_field, unknown
     m made  x miss  u unknown       (outcome)
@@ -52,7 +53,7 @@ from alea.video.clicklog import (
     write_video_meta,
 )
 from alea.video.frames import VideoError, VideoReader
-from alea.video.landmark_ids import known_landmark_ids
+from alea.video.landmark_ids import is_edge_id, known_landmark_ids
 
 MODES = ("landmarks", "robot", "launch", "track", "landing", "outcome")
 MODE_KEYS: Mapping[str, str] = {
@@ -162,7 +163,8 @@ def apply_click(state: ReviewState, u_px: float, v_px: float, t_pts_s: float) ->
             state,
             landmark_marks=(*state.landmark_marks, mark),
             history=(*state.history, "landmarks"),
-            message=f"{state.landmark_id} marked on frame {click.frame}",
+            message=f"{state.landmark_id} marked on frame {click.frame}"
+            + (_edge_summary(state, mark) if is_edge_id(mark.landmark_id) else ""),
         )
     if mode == "robot":
         new = replace(state, robot=click)
@@ -175,6 +177,11 @@ def apply_click(state: ReviewState, u_px: float, v_px: float, t_pts_s: float) ->
     else:  # outcome mode takes keys, not clicks
         return replace(state, message="outcome mode: press m, x or u")
     return replace(new, history=(*state.history, mode), message=f"{mode} click on {click.frame}")
+
+
+def _edge_summary(state: ReviewState, mark: LandmarkMark) -> str:
+    counts = edge_point_counts((*state.landmark_marks, mark))
+    return " (edges: " + ", ".join(f"{k[5:]} {v}" for k, v in counts.items()) + ")"
 
 
 def undo(state: ReviewState) -> ReviewState:
@@ -203,6 +210,15 @@ def new_draft(state: ReviewState) -> ReviewState:
         landmark_id=state.landmark_id,
         landmark_marks=state.landmark_marks,
     )
+
+
+def edge_point_counts(marks: tuple[LandmarkMark, ...]) -> dict[str, int]:
+    """Number of clicked points per straight-edge id (all frames of the video)."""
+    counts: dict[str, int] = {}
+    for m in marks:
+        if is_edge_id(m.landmark_id):
+            counts[m.landmark_id] = counts.get(m.landmark_id, 0) + 1
+    return counts
 
 
 def cycle_landmark(state: ReviewState, step: int) -> ReviewState:
@@ -295,6 +311,11 @@ def status_line(state: ReviewState, frame_count: int, n_saved: int) -> str:
         f"frame {state.frame}/{max(frame_count - 1, 0)}",
         f"mode {state.mode}" + (f" ({state.landmark_id})" if state.mode == "landmarks" else ""),
         f"landmarks {len(state.landmark_marks)}",
+        *(
+            [f"edge pts {edge_point_counts(state.landmark_marks).get(state.landmark_id, 0)}"]
+            if state.mode == "landmarks" and is_edge_id(state.landmark_id)
+            else []
+        ),
         f"robot {'ok' if state.robot else '-'}",
         f"launch {'ok' if state.launch else '-'}",
         f"track {len(state.track)}",

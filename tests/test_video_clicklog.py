@@ -221,7 +221,7 @@ def test_known_landmark_ids_are_unique_and_derived():
     from alea.video.landmark_ids import is_valid_landmark_id, known_landmark_ids
 
     ids = known_landmark_ids()
-    assert len(ids) == len(set(ids)) == 4 + 4 + 2 + 8 + 4
+    assert len(ids) == len(set(ids)) == 4 + 4 + 2 + 8 + 4 + 8
     assert all(is_valid_landmark_id(i) for i in ids)
 
 
@@ -237,3 +237,41 @@ def test_cli_validate_and_export(tmp_path, capsys):
     shots.write_text("{}\n", encoding="utf-8")
     assert main(["validate", str(shots)]) == 2
     assert main(["review", str(tmp_path / "missing.mp4")]) == 2
+
+
+# Copied from feature/2-camera-geometry commit ff53699 (alea/video/landmarks.py edge_table());
+# not imported across branches.
+EDGE_IDS = {
+    f"edge_{tag}_{side}" for tag in ("floor", "wall_top") for side in ("xlo", "xhi", "ylo", "yhi")
+}
+
+
+def test_edge_ids_accepted():
+    from alea.video.landmark_ids import is_edge_id, is_valid_landmark_id, known_landmark_ids
+
+    assert len(EDGE_IDS) == 8
+    assert EDGE_IDS <= set(known_landmark_ids())
+    assert all(is_valid_landmark_id(i) and is_edge_id(i) for i in EDGE_IDS)
+    assert not is_edge_id("hive_red_pivot") and not is_edge_id("edge_floor_zhi")
+    assert not is_valid_landmark_id("edge_floor_zhi")
+
+
+def test_edge_clicks_are_not_collapsed(tmp_path):
+    edge = "edge_floor_xlo"
+    clicks = [
+        _lm(10, edge, 100.0, 200.0),
+        _lm(10, edge, 110.0, 250.0),
+        _lm(10, edge, 120.0, 300.0),
+        _lm(10, "field_floor_corner_xlo_ylo", 1.0, 1.0),
+        _lm(10, "field_floor_corner_xlo_ylo", 2.0, 2.0),
+        _lm(11, edge, 100.0, 200.0),
+    ]
+    pooled = latest_landmark_clicks(clicks)
+    assert len(pooled) == 5  # 4 edge points + the corner, deduplicated
+    edge_pts = [(c.frame, c.u_px) for c in pooled if c.landmark_id == edge]
+    assert edge_pts == [(10, 100.0), (10, 110.0), (10, 120.0), (11, 100.0)]
+    corner = [c for c in pooled if c.landmark_id.startswith("field_")]
+    assert [c.u_px for c in corner] == [2.0]
+    path = tmp_path / "e.landmarks.jsonl"
+    write_landmarks_jsonl(path, clicks)
+    assert read_landmarks_jsonl(path) == clicks  # schema_version unchanged (1): additive ids

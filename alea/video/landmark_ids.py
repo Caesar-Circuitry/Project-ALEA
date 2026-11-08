@@ -10,6 +10,8 @@ change in game values never invalidates stored clicks. The naming convention (do
     hive_{red|blue}_pivot                               (HIVE_X_IN, HIVE_Y_IN, HIVE_PIVOT_HEIGHT_IN)
     hive_frame_corner_{xlo|xhi}_{ylo|yhi}_{zlo|zhi}     FRAME_X0/Y0/Z0 and + FRAME_NX/NY/NZ
     hive_{red|blue}_mouth_{audience|rear}               floor-plane use only
+    edge_{floor|wall_top}_{xlo|xhi|ylo|yhi}             ONE clicked point somewhere along that
+                                                        straight field edge (not a corner)
     custom_<name>                                       a mark not in alea.game (tile seam,
                                                         tape line); lowercase letters, digits, _
 
@@ -38,6 +40,8 @@ from alea.game.biobuzz import (
 CUSTOM_PREFIX = "custom_"
 _CUSTOM_RE = re.compile(r"^custom_[a-z0-9][a-z0-9_]*$")
 ALLIANCES = ("red", "blue")  # order of HIVE_X_IN
+EDGE_TAGS = ("floor", "wall_top")
+EDGE_SIDES = ("xlo", "xhi", "ylo", "yhi")
 _LO_HI = (("xlo", "xhi"), ("ylo", "yhi"), ("zlo", "zhi"))
 
 
@@ -63,7 +67,15 @@ def known_landmark_ids() -> tuple[str, ...]:
     for alliance in ALLIANCES:
         for mouth in ("audience", "rear"):
             ids.append(f"hive_{alliance}_mouth_{mouth}")
+    for tag in EDGE_TAGS:
+        for side in EDGE_SIDES:
+            ids.append(f"edge_{tag}_{side}")
     return tuple(ids)
+
+
+def is_edge_id(landmark_id: str) -> bool:
+    """True for the straight-edge ids; a click on one is a point anywhere along that edge."""
+    return landmark_id.startswith("edge_") and landmark_id in known_landmark_ids()
 
 
 def is_valid_landmark_id(landmark_id: str) -> bool:

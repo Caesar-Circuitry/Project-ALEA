@@ -33,8 +33,20 @@ field_wall_top_corner_{xlo|xhi}_{ylo|yhi}         z = WALL_HEIGHT_IN
 hive_{red|blue}_pivot
 hive_frame_corner_{xlo|xhi}_{ylo|yhi}_{zlo|zhi}
 hive_{red|blue}_mouth_{audience|rear}             floor-plane use only
+edge_{floor|wall_top}_{xlo|xhi|ylo|yhi}           one point anywhere along a straight field edge
 custom_<name>                                     marks not in alea.game (tile seam, tape line)
 ```
+
+#### Edge clicks in `landmarks.jsonl`
+
+A record whose `landmark_id` is an `edge_*` id is ONE clicked point lying somewhere on that
+straight edge (not a corner); the fit uses it to constrain pose and lens distortion. Several
+points per edge and per frame are expected. The de-duplication rule (`latest_landmark_clicks`) is:
+point landmarks keep the last click per (frame, landmark id); edge clicks are never collapsed, every
+line is an independent observation, in file order. Fix a wrong edge point with undo (`z`) in the
+review window, not by re-clicking. The ids are additive, so old files stay valid and
+`schema_version` stays 1. In the review window, `[` / `]` cycle through all ids including the edges,
+and the title shows the point count of the selected edge (all frames pooled).
 
 ### Review keys
 

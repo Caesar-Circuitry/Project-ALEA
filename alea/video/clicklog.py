@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from alea.video.landmark_ids import is_valid_landmark_id
+from alea.video.landmark_ids import is_edge_id, is_valid_landmark_id
 
 SCHEMA_VERSION = 1
 
@@ -462,9 +462,10 @@ class LandmarkClick:
 
     ``landmark_id`` is an id string (see ``alea.video.landmark_ids``), never coordinates.
     Kept in its own JSONL file, separate from shot clicks. If the same landmark is clicked
-    twice on one frame, the later line wins (``latest_landmark_clicks``). Clicks from any
-    frame of the same video are pooled when the video's one calibration is fitted (the camera
-    is static within a video).
+    twice on one frame, the later line wins (``latest_landmark_clicks``); an ``edge_*`` id
+    means one point anywhere along that straight edge, so edge clicks are never collapsed.
+    Clicks from any frame of the same video are pooled when the video's one calibration is
+    fitted (the camera is static within a video).
     """
 
     video_sha256: str
@@ -510,9 +511,21 @@ class LandmarkClick:
 
 
 def latest_landmark_clicks(clicks: Iterable[LandmarkClick]) -> list[LandmarkClick]:
-    """One click per (frame, landmark_id), the last written, ordered by frame then id."""
-    latest = {(c.frame, c.landmark_id): c for c in clicks}
-    return [latest[k] for k in sorted(latest)]
+    """Collapse repeated clicks on the same point landmark; keep every straight-edge click.
+
+    A point landmark (a corner, pivot, ...) has one true position, so a later click on the same
+    (frame, landmark_id) replaces the earlier one. An ``edge_*`` click is one point somewhere
+    along the edge, so every edge click is kept, in file order. Result is ordered by frame, then
+    landmark id (stable).
+    """
+    latest: dict[tuple[int, str], LandmarkClick] = {}
+    kept: list[LandmarkClick] = []
+    for c in clicks:
+        if is_edge_id(c.landmark_id):
+            kept.append(c)
+        else:
+            latest[(c.frame, c.landmark_id)] = c
+    return sorted([*latest.values(), *kept], key=lambda c: (c.frame, c.landmark_id))
 
 
 def read_landmarks_jsonl(path: Path) -> list[LandmarkClick]:

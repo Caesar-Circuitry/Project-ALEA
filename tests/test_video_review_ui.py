@@ -288,3 +288,24 @@ def test_landmark_clicks_saved_undone_and_reloaded(tmp_path):
     click(app, 3.0, 2.0)
     app.on_key(SimpleNamespace(key="enter"))
     assert len(make_app().saved) == 1  # and the earlier shot record
+
+
+def test_edge_ids_cycle_and_count_points():
+    from alea.video.review import edge_point_counts, status_line
+
+    s = press(ReviewState(), "c")
+    while not s.landmark_id.startswith("edge_"):
+        s = press(s, "]")
+    assert s.landmark_id == "edge_floor_xlo"
+    for i in range(3):
+        s = apply_click(s, 10.0 + i, 20.0 + 5 * i, 0.0)
+    assert edge_point_counts(s.landmark_marks) == {"edge_floor_xlo": 3}
+    assert "edge pts 3" in status_line(s, 30, 0)
+    assert "xlo 3" in s.message
+    s = undo(s)
+    assert edge_point_counts(s.landmark_marks) == {"edge_floor_xlo": 2}
+    s = press(s, "]", "]")
+    assert "edge pts 0" in status_line(s, 30, 0)
+    # wrapping from the last id (an edge) goes back to the first corner
+    s = press(ReviewState(), "[")
+    assert s.landmark_id == "edge_wall_top_yhi"
