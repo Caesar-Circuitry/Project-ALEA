@@ -47,11 +47,16 @@ def _hive_json(h: Hive3dState) -> dict[str, Any]:
 def test_joint_tick_case(case: dict[str, Any]) -> None:
     alliance = case["alliance"]
     balls = fill_cell(alliance, case["staged"]["pollen"], case["staged"]["nectar"])
-    # the 'angle undefined' case reads the Rapier body; it sat pinned on its stop (the loads
-    # traces record 0.5235987851049739 for a pinned blue tray at tick 0)
-    body_theta_rad = 0.5235987851049739
+    # the 'angle undefined' case reads the Rapier body; it sat pinned on its own stop (the loads
+    # traces record 0.5235987851049739 for a pinned blue tray at tick 0). The stop is +30 deg
+    # for blue and -30 deg for red, so the sign follows the alliance; the cases that carry an
+    # explicit hive angle ignore this value.
+    body_stop_rad = 0.5235987851049739
+    body_theta_rad = -body_stop_rad if alliance == "red" else body_stop_rad
     res = hive_dynamic_tick(alliance, _hive(case["hive_in"]), body_theta_rad, balls, None)
-    Dev().cmp(_hive_json(res.hive), case["hive_out"], case["label"])
+    dev = Dev()
+    dev.cmp(_hive_json(res.hive), case["hive_out"], case["label"])
+    assert dev.abs_dev == 0
     assert res.nectar_due_inc == case["nectar_due"]
     assert list(res.events) == case["events"]
     want_spill = case["spill"]
