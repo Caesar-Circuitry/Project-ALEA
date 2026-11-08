@@ -1,6 +1,6 @@
 # 0005: High-fidelity physics from dsim
 
-**Status:** accepted, 2026-11-07. Step A of phase 1b wired: `fidelity: hifi` runs (fast shot kernel unchanged plus the ported hive logic); contacts and the 3D hive are still not ported.
+**Status:** accepted, 2026-11-07. State of phase 1b: see the section at the end (2026-11-08).
 
 ## Context
 
@@ -36,7 +36,7 @@ licensed PolyForm Noncommercial 1.0.0, which differs from the rest of ALEA.
 
 - The fast path is unchanged (`shotsim.py`, `study.py` frozen; `just selftest` passes). `hifi` calls
   `Study.run` as is, then feeds each condition's score rate into seeded hive sessions that run
-  the ported capture, tip table, 4 s swing timer, release and spill. Ball contacts, the 3D hive
+  the ported capture, tip table, 4 s swing timer, release and spill. Ball contacts, the 3D hive engine
   and robot collisions are not modelled; the session docstring lists exactly what is and is not.
 - `hifi` results are labelled and kept apart: `results/study-hifi`, `cond_hifi_XXX.npz` with a
   `fidelity` field, `summary_hifi.csv`, `hifi_*.png` titled `[hifi]`. `run_study` refuses to
@@ -52,3 +52,24 @@ licensed PolyForm Noncommercial 1.0.0, which differs from the rest of ALEA.
 - The DSIM_VERSION pin is in place. Change it deliberately: a new commit means new traces.
 - dsim's 3D hive and contacts run on its rigid-body engine layer, so they are much harder to
   port than its pure hive logic; `alea/hifi/PORTING.md` splits the two.
+
+## State of phase 1b (2026-11-08)
+
+- Ported: pin, the pure 2D hive logic (`hive.py`), the dsim traces (2D and 3D), and the pure
+  arithmetic of the 3D hive (`hive3d.py`, `hive3d_constants.py`, `math3.py`: torques,
+  `insideCell`, swing bookkeeping, detent decision), all replayed bit-for-bit. In the 3D replay
+  the tray angle comes from the recording.
+- Wired (step A): `fidelity: hifi` runs. The fast shot kernel is unchanged, followed by hive
+  sessions on the 2D logic (`hive_session.py`, `hifi_study.py`, `frame.py`). The 3D arithmetic is
+  not used by the study yet.
+- Not yet ported: contents membership (`sim3d/derive.ts` `insideCell` with seat depth; pure
+  geometry, the loads replay feeds `contents_n` from the recording), nectar box.
+- Engine outputs used as inputs: tray angle, angular velocity and element positions.
+- Not ported, and not possible without an engine: the swing itself (Rapier revolute body,
+  damping 4.466, limits, solver iterations), contacts and G409, sleeping. The list of mismatches
+  with dsim's engine is in `alea/hifi/PORTING.md`.
+- Open for the user: whether to build a Warp or NumPy rigid-body layer for the swing and
+  contacts (large, and dsim's calibration constants are fitted to Rapier), or to stop at the
+  table-driven tip; the open geometry and restitution items (PORTING.md); the session
+  placeholders (session size, `shot_interval_s`, `retarget_after_tip`). Nothing in `alea/game/`
+  has been changed or chosen.
