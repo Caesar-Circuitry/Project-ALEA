@@ -2,8 +2,9 @@
 
 Pinned dsim commit: `62d2446e2ebdf416548fa1641847289bf47cdf36` (default branch `main`, committed
 2026-11-02; github.com/genius0412/dsim, PolyForm Noncommercial 1.0.0, copy in `LICENSE-dsim`).
-Plan and licensing: `docs/decisions/0005-hifi-dsim-port.md`. Ported so far (phase 1b): the pure hive logic only (below). Not ported: the 3D hive, contacts,
-nectar box, and any use of the port by the study kernel; `check_fidelity('hifi')` still raises.
+Plan and licensing: `docs/decisions/0005-hifi-dsim-port.md`. Ported so far (phase 1b): the pure 2D hive logic and the pure arithmetic of the 3D hive (both
+below). Not ported: the 3D engine (the swing), contacts, nectar box, and any use of the port by
+the study kernel; `check_fidelity('hifi')` still raises.
 
 ## Ported (branch feature/1b-hive-logic)
 
@@ -30,6 +31,111 @@ timer traces never clear it (see `tests/hifi_traces/README.md`).
 Not yet decided: nothing from `alea/game/` is used by this code. The differences listed below
 are still the user's to resolve before the port feeds any study.
 
+
+## Ported: the pure part of the 3D hive (branch feature/1b-3d-port)
+
+| Python | From dsim | Notes |
+|---|---|---|
+| `hive3d.py` | `sim3d/hive3d.ts`: `insideCell`, `hiveContentsTorque`, `hiveRestoringTorque`, `hiveHoldTorque`, `stopAngle`, `tippingFromAngle`, `hiveDynamicTick` (`hive3dJointTick`), the decision of `hiveDetentHold`; `tilt.ts`: `hiveTiltAngle`, `hiveTrayRefTheta`; `bodies.ts`: `hivePivotX`, `hiveCellLocalBox` (CAD path), `hiveTrayComW`, `hiveTrayMassProps`, `elementMass` | immutable `Hive3dState`; the tray angle and angular velocity are caller-supplied; `detent_decision` returns the Rapier writes (creep, wake, pin pose) as a `DetentDecision` instead of doing them |
+| `hive3d_constants.py` | the `BB3_*` block of `config.ts`, `GRAVITY`, `SIM_DT`, and the CAD cell boxes from `fieldColliders.gen.ts:3` | dsim's numbers, not alea/game's; each with its dsim file:line; names already in `hive_constants.py` are re-exported |
+| `math3.py` | `sim3d/math3.ts`: `rotate2`, `tiltQuatX` | through `dsin` / `dcos` |
+
+There is no solver, integrator, joint or contact code in any of these. The port reads the tray
+angle the way dsim reads it (`hive.angle`, or the engine body when absent) but cannot produce it.
+
+Validation (`tests/test_hifi_hive3d_*.py`, helpers in `tests/hifi_replay3d.py`), with dsim's
+own recorded outputs from `tests/hifi_traces/sim3d/`:
+
+| Fixture | What is replayed | Measured max deviation |
+|---|---|---|
+| `constants3d.json` | every config constant, mass props, centre of mass, pivot x, cell boxes, element masses | exactly equal |
+| `statics3d.json` | 290 contents-torque rows, 58 restoring/hold rows, 5184 `insideCell` points | 0.0 (bit-identical); all inside flags equal |
+| `joint_tick.json` | all 19 single-call cases: hive record out, nectar due, events, spill tags | 0.0; events and spill maps equal |
+| `loads_*.json` (11 rows) | `hive_dynamic_tick` run per tick over the RECORDED angle and angular velocity: tipping countdown, released, tips, up side, nectar due, SPILLS and TIP event ticks | 0.0 over all ticks |
+| `loads_*.json` | `detent_decision` on the recorded pre-step tray state vs the recorded `tray_held` | all ticks equal (one tick skipped, see below) |
+
+Tolerance: none. Every float is demanded equal, because every recorded number is a pure
+function of its inputs and the port keeps dsim's operation order and its `dsin` / `dcos`. If a
+later change makes a replay differ in the last bit, say so and set a stated tolerance; do not
+loosen silently.
+
+What the `loads_*.json` replay is, and is not. The angle and angular velocity of every tick come
+FROM THE RECORDING (dsim's world JSON, rounded to 4 decimals, which is what `hiveDynamicTick`
+reads), so this proves that the state machine turns a given swing into dsim's bookkeeping. It
+does not prove the swing. Also fed from the recording: `contents` (rebuilt from `contents_n`) and
+the spill tag count (`spill_n`); spill tagging itself is covered by `joint_tick.json` only, where
+the staged element positions are rebuilt by a test-side copy of the recorder's `fillCell`. The
+detent decision check rebuilds contents composition from the staged load (nectar first); the one
+tick where the tray sits at a stop with a partly emptied cell is skipped because the kinds of
+the remaining ids are not recorded. `hiveDetentHold` is not called alone by any fixture, and the
+creep and wake outputs have only hand-derived unit tests (read off `hive3d.ts:242-330`).
+
+### Where the port cannot match dsim's engine
+
+These are the places where the pure port stops being dsim. None is hidden; none is fixable
+without writing a rigid-body engine, which this branch does not do.
+
+1. **The swing trajectory.** Tray angle and angular velocity per tick are the result of a Rapier
+   revolute-joint solve: angular damping `BB3_HIVE_DAMPING` 4.466, the joint's limits, the
+   contents pressing on the tray, 8 solver iterations, and a fixed dt that is 1/60 s in the
+   recording but unverified for the engine's own internal substeps. The port takes the angle as
+   an input. Anything that needs the angle to EVOLVE (a study, a what-if load, a robot leaning on
+   the tray) needs an engine.
+2. **Contacts and G409** (`hiveContactPass`, `contacts3d.ts`, `contactPairsWith`, the Rapier
+   collision groups): not ported. `g409_contacts.json` is recorded but not replayed.
+3. **Sleeping and waking.** Dsim pins the tray, Rapier then sleeps it, and the breakaway has to
+   wake the body and the elements (`hive3d.ts:304-324`). The port returns `wake` as a decision;
+   what sleeping does to the solve is the engine's.
+4. **The detent pin as a physical act.** `detent_decision` says "pin the pose and zero the
+   velocity"; whether the body then stays exactly there (and what `trayTilt` reads, which needs
+   dsim's `datan2`, not ported) is the engine.
+5. **Cross-machine non-determinism.** Dsim's own `hive-calibrate.ts` header says the sim3d
+   result is not bit-reproducible across machines (seen on a Windows run), and the recording was
+   checked for determinism on one machine only. The pure functions here are deterministic, but a
+   future replay against traces from another machine would need tolerances on the engine-derived
+   inputs.
+6. **Calibration constants fit to that engine.** `BB3_HIVE_DETENT` 3041, `BB3_HIVE_DAMPING`
+   4.466 and `BB3_HIVE_BALLAST` 6 were fitted by dsim's `scripts/hive-calibrate.ts` against its
+   own Rapier setup. Used in another engine they have no guarantee. The torque functions use
+   them exactly as dsim does.
+7. **Not ported on purpose:** the kinematic tray path (`hive3dTick`, off by default), the
+   algebraic fallback of `hiveCellLocalBox` (not reached with `BB3_FIELD_COLLIDERS` true), and
+   the calibration overrides (`__setDetentForCalibration`, the ballast override).
+
+8. **Shared spill map and event order.** In dsim `bb.spill` is one object shared by the red
+   then blue loop of `hiveDynamicTick`, and events are pushed red first. `hive_dynamic_tick` is
+   per alliance and copies the map, so the caller must feed red's returned `spill` into blue's
+   call and keep the red-then-blue event order.
+9. **Readback rounding contract.** `hiveDynamicTick` reads `hive.angle` / `angVel` as rounded to
+   4 decimals by dsim's readback (`engineImpl.ts:1450-1451`), while the detent reads the
+   unrounded `trayTilt(body)`. Ball positions are rounded the same way (`engineImpl.ts:1347-1349`).
+   `round4` is `Math.round(x * 1e4) / 1e4` (`math3.ts:138`): JavaScript rounds halves toward
+   +infinity, not to even, so a future caller must use JS rounding semantics (not Python's
+   `round`). The caller must supply each value in that form; the port does not round. The
+   replays do so (rounded columns for the tick, full-precision body columns for the detent).
+10. **The `useHiveDynamic()` gate** (`hive3d.ts:487`, which makes `hive3dJointTick` return at
+   once on the kinematic tray) is not modelled. Harmless while `BB3_HIVE_DYNAMIC` is true, which
+   `tests/test_hifi_hive3d_statics.py` asserts.
+11. **NaN.** `min` / `max` in `tippingFromAngle` and `hiveTiltAngle` follow JavaScript (NaN in,
+   NaN out). Other NaN paths (for example `Math.sign(NaN)` comparisons) are not specially
+   tested.
+12. **Contents membership is not yet ported** (`sim3d/derive.ts`: `insideCell(...,
+   minDepth=BB3_CELL_SEAT_DEPTH)` decides which elements count as hive contents). Unlike the
+   items above this is pure geometry and can be ported; it is simply not done. The loads replay
+   feeds `contents_n` from the recording instead.
+13. **Element positions are engine outputs too.** `hive_contents_torque` and the spill tagging
+   read ball positions, which come from Rapier like the tray angle (item 1), so they are inputs
+   here (recorded, or rebuilt by the test-side `fill_cell` for `joint_tick.json`).
+14. **Tick stage order a future engine must reproduce.** `hiveDetentHold` inside `applyHiveTilt`
+   before the solve (`engineImpl.ts:1074`, on the unrounded `trayTilt`); the solve; the readback
+   (rounding, item 9); `hive3dJointTick` (`step3dImpl.ts:210`); then `derive.ts`. The detent is
+   therefore one tick behind derive.
+15. **Small known differences.** `detent_decision` requires a hive, where dsim tolerates a
+   missing `world.biobuzz` (upSign 1, empty load, pins). Spill keys are int in Python and string
+   in dsim's JSON. Spill dict order is insertion order.
+
+Differences from `alea/game/` listed below still apply to the 3D numbers (the CAD cell boxes
+here are dsim's measurement of its own CAD export). Nothing from `alea/game/` is used.
 
 ## What to port, in order
 

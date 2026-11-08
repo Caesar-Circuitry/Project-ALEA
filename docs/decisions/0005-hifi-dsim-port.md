@@ -40,3 +40,19 @@ licensed PolyForm Noncommercial 1.0.0, which differs from the rest of ALEA.
 - The DSIM_VERSION pin is in place. Change it deliberately: a new commit means new traces.
 - dsim's 3D hive and contacts run on its rigid-body engine layer, so they are much harder to
   port than its pure hive logic; `alea/hifi/PORTING.md` splits the two.
+
+## State of phase 1b (2026-11-07)
+
+- Done: pin, the pure 2D hive logic (`hive.py`), the dsim traces (2D and 3D), and the pure
+  arithmetic of the 3D hive (`hive3d.py`: torques, `insideCell`, swing bookkeeping, detent
+  decision), all replayed bit-for-bit. In the 3D replay the tray angle comes from the recording.
+- Not yet ported: contents membership (`sim3d/derive.ts` `insideCell` with seat depth; pure
+  geometry, the loads replay feeds `contents_n` from the recording).
+- Engine outputs used as inputs: tray angle, angular velocity and element positions.
+- Not done, and not possible without an engine: the swing itself (Rapier revolute body,
+  damping 4.466, limits, solver iterations), contacts and G409, sleeping, and any use by a
+  study. `check_fidelity('hifi')` still raises. The list of mismatches with dsim's engine is in
+  `alea/hifi/PORTING.md`.
+- Open for the user: whether to build a Warp or NumPy rigid-body layer for the swing and
+  contacts (large, and dsim's calibration constants are fitted to Rapier), or to stop at the
+  table-driven tip. Nothing in `alea/game/` has been changed or chosen.

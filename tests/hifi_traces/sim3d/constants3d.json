@@ -1,0 +1,92 @@
+{
+  "dsim_commit": "62d2446e2ebdf416548fa1641847289bf47cdf36",
+  "source_file": "src/games/biobuzz/sim3d/hive3d.ts",
+  "source_files": ["src/games/biobuzz/sim3d/hive3d.ts","src/games/biobuzz/config.ts"],
+  "scenario": "config.ts constants the 3D hive reads (BB3_HIVE_*, seat depth, element mass, tilt), plus GRAVITY and SIM_DT",
+  "generator": {
+    "script": "tests/hifi_traces/record_3d/record_hive3d.mts",
+    "command": "just dev /tmp/dsim3d-XXXX/node_modules/.bin/tsx /tmp/dsim3d-XXXX/record_hive3d.mts /tmp/dsim3d-XXXX/src <wt>/tests/hifi_traces/sim3d"
+  },
+  "inputs": {
+    "note": "values read from the loaded modules; BB3_HIVE_DETENT/DAMPING/BALLAST are hive-calibrate outputs"
+  },
+  "config": {
+    "BB3_CELL_SEAT_DEPTH": 3.5,
+    "BB3_ELEMENT_MASS": 0.2,
+    "BB3_HIVE_ARM": 15.519,
+    "BB3_HIVE_BALLAST": 6,
+    "BB3_HIVE_BALLAST_AT": [0,-9.5],
+    "BB3_HIVE_CELL": {
+      "w": 20.141,
+      "d": 11.75,
+      "h": 13.997
+    },
+    "BB3_HIVE_CELL_LEN": 11.75,
+    "BB3_HIVE_CELL_WALL": 0.25,
+    "BB3_HIVE_DAMPING": 4.466,
+    "BB3_HIVE_DETENT": 3041,
+    "BB3_HIVE_DYNAMIC": true,
+    "BB3_HIVE_LEN": 42.788,
+    "BB3_HIVE_PIVOT_Z": 43.95,
+    "BB3_HIVE_REST_W": 0.15,
+    "BB3_HIVE_SHED_AFTER": 4,
+    "BB3_HIVE_SHED_MAX": 8,
+    "BB3_HIVE_SHED_MIN_Z": 30,
+    "BB3_HIVE_SHED_REGION_X": 26,
+    "BB3_HIVE_SHED_REGION_Y": 22.5,
+    "BB3_HIVE_SHED_SPEED": 14,
+    "BB3_HIVE_SHED_VZ": 10,
+    "BB3_HIVE_STOP_DEG": 29,
+    "BB3_HIVE_TIP_CREEP_W": 0.12,
+    "BB3_HIVE_TRAY_MASS": 13,
+    "BB3_NECTAR_MASS_RATIO": 1.6,
+    "BB3_REST_SPEED": 2,
+    "BB3_TRAY_OUTER_SKIN": 0.5,
+    "BB_HIVE_TILT_DEG": 30,
+    "BB_NECTAR_R": 1.8,
+    "BB_POLLEN_R": 1.4,
+    "BB_TIP_POLLEN": [8,7,6,3,1,0]
+  },
+  "GRAVITY": 386,
+  "SIM_DT": 0.016666666666666666,
+  "BB_TIP_SWING_S": 4,
+  "use_hive_dynamic_default": true,
+  "mass_props": {
+    "red": {
+      "mass": 19,
+      "comW": 0.7838552631578952,
+      "inertia": 4575.947859
+    },
+    "blue": {
+      "mass": 19,
+      "comW": 0.7838552631578952,
+      "inertia": 4575.947859
+    }
+  },
+  "tray_com_w": {
+    "red": 5.5302500000000006,
+    "blue": 5.5302500000000006
+  },
+  "pivot_x_in": {
+    "red": -12.75,
+    "blue": 12.75
+  },
+  "ref_theta": {
+    "red": 0,
+    "blue": 0
+  },
+  "cell_local_box": {
+    "red": {
+      "north": {"xHalf":10.0706,"vMin":9.644,"vMax":21.3941,"wMin":-1.4682,"wMax":12.5287,"refTheta":0},
+      "south": {"xHalf":10.0706,"vMin":-21.3941,"vMax":-9.6441,"wMin":-1.4682,"wMax":12.5287,"refTheta":0}
+    },
+    "blue": {
+      "north": {"xHalf":10.0706,"vMin":9.6441,"vMax":21.3941,"wMin":-1.4682,"wMax":12.5287,"refTheta":0},
+      "south": {"xHalf":10.0706,"vMin":-21.3941,"vMax":-9.644,"wMin":-1.4682,"wMax":12.5287,"refTheta":0}
+    }
+  },
+  "element_mass": {
+    "pollen": 0.2,
+    "nectar": 0.32000000000000006
+  }
+}
