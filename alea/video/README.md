@@ -25,5 +25,29 @@ from several frames of the same video may be pooled. Nothing assumes a shared ca
 - `calibration.py`: `calibrate(clicks, video, camera_setup_id=...)` -> `Calibration`, JSON
   read/write (`schema_version`, camera setup id, landmark ids, residuals, ellipses).
 
-Lens distortion is not modelled; check the residuals. Accuracy on synthetic cameras is
-asserted in `tests/test_video_geometry.py` (no real footage is committed).
+### Accuracy upgrades (stage 2.1)
+
+- **Lens distortion.** `Camera` carries Brown-Conrady `k1` (and `k2` with
+  `distortion="k1k2"`), stored in the calibration JSON under `camera.distortion`;
+  `Camera.distort_px` / `undistort_px` convert pixels. The fit estimates `k1` only when off-floor
+  points or straight-edge clicks constrain it (`distortion="auto"`), under a weak zero prior
+  (sigma 0.1), and warns when `k1` stays poorly constrained. It matters for wide cameras where
+  the field fills the frame; for a telephoto view the field sits in the image centre and it
+  changes nothing.
+- **Straight edges.** Points clicked anywhere along a straight field edge constrain pose and
+  distortion without naming a point on it. Edge ids: `edge_{floor|wall_top}_{xlo|xhi|ylo|yhi}`
+  (see `landmarks.edge_table()`). They go in the same click list as landmark clicks (name = edge
+  id, one record per point). The click log (`feature/2-click-log`) validates landmark ids
+  strictly, so it must also accept these `edge_*` ids in `<stem>.landmarks.jsonl` before the UI
+  can record them. `calibrate` warns when five or more clicks on one edge deviate more than 2 px
+  from a straight line (distortion or a mis-click).
+- **Robust loss.** A Cauchy loss with iterative reweighting (`robust=True`) stops one mis-click
+  from dominating; leave-one-out residuals (computed without the robust weights) still flag it.
+- **Pooling.** The same landmark clicked in several frames is several independent observations;
+  `click_noise_px` in the JSON is the pooled scatter of repeated clicks (used for the floor
+  ellipses when `sigma_px` is not given).
+- **Sub-pixel snap.** `subpixel.snap_corner` (needs the `video` extra) refines a click to the
+  local corner with `cv2.cornerSubPix`; optional.
+
+Accuracy on synthetic cameras is asserted in `tests/test_video_geometry.py` and
+`tests/test_video_distortion.py` (no real footage is committed).

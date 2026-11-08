@@ -14,15 +14,41 @@ from pathlib import Path
 import numpy as np
 
 from alea.video.geometry import (
+    DISTORTION_AUTO,
+    STRAIGHT_WARN_PX,
     Camera,
     GeometryError,
+    LineObs,
     fit_camera,
     floor_ellipse,
     floor_point_from_homography,
+    straight_line_deviation_px,
 )
-from alea.video.landmarks import get_landmark, is_custom_id, landmarks_xyz_in
+from alea.video.landmarks import get_edge, get_landmark, is_custom_id, is_edge_id, landmarks_xyz_in
 
+# Version 1 files (no distortion, no edge clicks) stay readable: the new fields are optional.
 SCHEMA_VERSION = 1
+
+
+def repeat_click_noise_px(clicks: "list[ClickedLandmark]") -> float | None:
+    """Per-click noise (px, per axis) from landmarks clicked more than once.
+
+    Clicks of one static landmark in several frames are independent observations of the same
+    point: the fit already treats them as such (the weighted mean has sigma/sqrt(n)), and their
+    scatter about the group mean gives the pooled estimate sqrt(sum d^2 / (N - groups) / 2).
+    Returns None when no landmark was clicked twice.
+    """
+    groups: dict[str, list[tuple[float, float]]] = {}
+    for c in clicks:
+        groups.setdefault(c.name, []).append((c.u_px, c.v_px))
+    ss, dof = 0.0, 0
+    for pts in groups.values():
+        if len(pts) < 2:
+            continue
+        a = np.array(pts)
+        ss += float(((a - a.mean(axis=0)) ** 2).sum())
+        dof += 2 * (len(pts) - 1)
+    return math.sqrt(ss / dof) if dof else None
 
 
 @dataclass(frozen=True)
@@ -61,6 +87,8 @@ class Calibration:
     rms_reprojection_px: float
     max_loo_residual_px: float | None
     max_floor_in: float | None
+    k1_sigma: float | None = None  # posterior sigma of the radial distortion k1 (None: not fitted)
+    click_noise_px: float | None = None  # per-click noise estimated from repeated clicks
     warnings: list[str] = field(default_factory=list)
     valid_frames: tuple[int, int] = (0, 0)
     camera_setup_id: str = ""  # e.g. event code + camera position; one calibration per setup
@@ -106,6 +134,8 @@ class Calibration:
             "rms_reprojection_px": self.rms_reprojection_px,
             "max_loo_residual_px": self.max_loo_residual_px,
             "max_floor_in": self.max_floor_in,
+            "k1_sigma": self.k1_sigma,
+            "click_noise_px": self.click_noise_px,
             "warnings": self.warnings,
             "operator": self.operator,
             "created_at": self.created_at,
@@ -136,6 +166,8 @@ class Calibration:
             rms_reprojection_px=d["rms_reprojection_px"],
             max_loo_residual_px=d["max_loo_residual_px"],
             max_floor_in=d["max_floor_in"],
+            k1_sigma=d.get("k1_sigma"),
+            click_noise_px=d.get("click_noise_px"),
             warnings=list(d["warnings"]),
             valid_frames=(int(d["valid_frames"][0]), int(d["valid_frames"][1])),
             calibration_id=d["calibration_id"],
@@ -153,18 +185,42 @@ def calibrate(
     video: VideoInfo,
     valid_frames: tuple[int, int] = (0, 0),
     operator: str = "",
-    sigma_px: float = 1.0,
+    sigma_px: float | None = None,
     camera_setup_id: str = "",
+    distortion: str = DISTORTION_AUTO,
 ) -> Calibration:
     """Fit ONE static camera to clicked landmarks (any visible subset, possibly pooled from
     several frames of the same video) and return the calibration record."""
     custom = [c for c in clicks if is_custom_id(c.name)]
-    clicks = [c for c in clicks if not is_custom_id(c.name)]
+    rest = [c for c in clicks if not is_custom_id(c.name)]
+    edge_clicks = [c for c in rest if is_edge_id(c.name)]
+    clicks = [c for c in rest if not is_edge_id(c.name)]
     if not clicks:
         raise GeometryError("no landmark clicks")
     world = landmarks_xyz_in([c.name for c in clicks])
     pixels = np.array([[c.u_px, c.v_px] for c in clicks], dtype=np.float64)
-    fit = fit_camera(world, pixels, video.width_px, video.height_px)
+    lines = LineObs.empty()
+    if edge_clicks:
+        edges = [get_edge(c.name) for c in edge_clicks]
+        lines = LineObs(
+            np.array([e.a.xyz_in for e in edges], dtype=np.float64),
+            np.array([e.b.xyz_in for e in edges], dtype=np.float64),
+            np.array([[c.u_px, c.v_px] for c in edge_clicks], dtype=np.float64),
+        )
+    fit = fit_camera(
+        world, pixels, video.width_px, video.height_px, lines=lines, distortion=distortion
+    )
+    straight_warnings: list[str] = []
+    for edge_id in sorted({c.name for c in edge_clicks}):
+        pts = [(c.u_px, c.v_px) for c in edge_clicks if c.name == edge_id]
+        if len(pts) >= 5 and (dev := straight_line_deviation_px(pts)) > STRAIGHT_WARN_PX:
+            straight_warnings.append(
+                f"clicks on {edge_id} deviate {dev:.1f} px from a straight line "
+                "(lens distortion or a mis-click)"
+            )
+    noise_px = repeat_click_noise_px(clicks)
+    if sigma_px is None:
+        sigma_px = noise_px if noise_px is not None else 1.0
     out: list[ClickedLandmark] = []
     for c, r, loo in zip(clicks, fit.residuals_px, fit.loo_residuals_px, strict=True):
         extra: dict[str, float | None] = {}
@@ -176,6 +232,9 @@ def calibrate(
                 "floor_angle_deg": e.angle_deg,
             }
         out.append(replace(c, residual_px=float(r), loo_residual_px=_finite_or_none(loo), **extra))
+    edge_fit = zip(edge_clicks, fit.line_residuals_px, fit.line_loo_residuals_px, strict=True)
+    for c, r, loo in edge_fit:
+        out.append(replace(c, residual_px=float(r), loo_residual_px=_finite_or_none(loo)))
     majors = [c.floor_major_in for c in out if c.floor_major_in is not None]
     return Calibration(
         video=video,
@@ -186,8 +245,11 @@ def calibrate(
         rms_reprojection_px=fit.rms_px,
         max_loo_residual_px=_finite_or_none(fit.max_loo_px),
         max_floor_in=float(max(majors)) if majors else None,
+        k1_sigma=_finite_or_none(fit.k1_sigma),
+        click_noise_px=noise_px,
         warnings=[
             *fit.warnings,
+            *straight_warnings,
             *(
                 [f"ignored custom landmark ids (no coordinates in alea.game): {names}"]
                 if (names := sorted({c.name for c in custom}))

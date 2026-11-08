@@ -69,7 +69,8 @@ def test_noise_free_recovers_camera_exactly() -> None:
     assert fit.rms_px < 1e-6
     assert fit.camera.f_px == pytest.approx(F, rel=1e-6)
     assert np.allclose(fit.camera.position_in, cam.position_in, atol=1e-3)
-    assert not fit.warnings
+    assert not [w for w in fit.warnings if "k1" not in w]
+    assert abs(fit.camera.k1) < 0.01  # prior keeps an unconstrained k1 near zero
 
 
 @pytest.mark.parametrize("name", list(CAMERAS))
@@ -81,7 +82,7 @@ def test_synthetic_targets_one_pixel_noise(name: str) -> None:
     rms, f_err, floor_rms, elev_rms, floor_max, elev_max = [], [], [], [], [], []
     for seed in range(30):
         px = clicks(cam, NAMES, 1.0, seed)
-        fit = fit_camera(world, px, W, H)
+        fit = fit_camera(world, px, W, H, compute_loo=False)
         assert fit.camera is not None
         rms.append(fit.rms_px)
         f_err.append(abs(fit.camera.f_px / F - 1))
@@ -115,7 +116,7 @@ def test_noise_two_pixels_still_sane() -> None:
     world = landmarks_xyz_in(NAMES)
     errs = []
     for seed in range(20):
-        fit = fit_camera(world, clicks(cam, NAMES, 2.0, seed), W, H)
+        fit = fit_camera(world, clicks(cam, NAMES, 2.0, seed), W, H, compute_loo=False)
         assert fit.camera is not None
         u, v = cam.project([70, 70, 0.0])[0]
         errs.append(np.linalg.norm(fit.camera.point_on_plane_z(u, v, 0.0)[:2] - [70, 70]))
@@ -216,10 +217,8 @@ def test_calibration_roundtrip(tmp_path) -> None:
     assert back.floor_point_in(W / 2, H / 2) == pytest.approx(cal.floor_point_in(W / 2, H / 2))
     assert back.max_floor_in is not None and back.max_floor_in > 0
     assert all(c.residual_px is not None for c in back.landmarks)
-    # with exactly 4 floor corners, leaving one out leaves 3: no leave-one-out for those
+    assert all(c.loo_residual_px is not None for c in back.landmarks)
     floor = [c for c in back.landmarks if c.name.startswith("field_floor")]
-    assert all(c.loo_residual_px is None for c in floor)
-    assert all(c.loo_residual_px is not None for c in back.landmarks if c not in floor)
     assert all(c.floor_major_in and c.floor_minor_in for c in floor)
     assert all(c.floor_major_in is None for c in back.landmarks if c.name.startswith("field_wall"))
 

@@ -113,3 +113,49 @@ def elevated_landmarks() -> list[Landmark]:
 def landmarks_xyz_in(names: list[str]) -> NDArray[np.float64]:
     """World coordinates (N, 3) in inches for the given landmark names."""
     return np.array([get_landmark(n).xyz_in for n in names], dtype=np.float64).reshape(-1, 3)
+
+
+# --- straight edges: points clicked anywhere along them constrain pose and lens distortion
+
+
+@dataclass(frozen=True)
+class Edge:
+    """A straight 3D edge between two landmarks; clicks anywhere along it are observations."""
+
+    name: str
+    a: Landmark
+    b: Landmark
+
+
+def _build_edges() -> dict[str, Edge]:
+    out: dict[str, Edge] = {}
+    for tag, prefix in (("floor", "field_floor_corner"), ("wall_top", "field_wall_top_corner")):
+        sides = {
+            "xlo": ("xlo_ylo", "xlo_yhi"),
+            "xhi": ("xhi_ylo", "xhi_yhi"),
+            "ylo": ("xlo_ylo", "xhi_ylo"),
+            "yhi": ("xlo_yhi", "xhi_yhi"),
+        }
+        for side, (c0, c1) in sides.items():
+            name = f"edge_{tag}_{side}"
+            out[name] = Edge(name, _TABLE[f"{prefix}_{c0}"], _TABLE[f"{prefix}_{c1}"])
+    return out
+
+
+_EDGES: dict[str, Edge] = _build_edges()
+
+
+def edge_table() -> dict[str, Edge]:
+    """All straight edges by id (`edge_floor_xlo`, `edge_wall_top_yhi`, ...)."""
+    return dict(_EDGES)
+
+
+def is_edge_id(name: str) -> bool:
+    return name in _EDGES
+
+
+def get_edge(name: str) -> Edge:
+    try:
+        return _EDGES[name]
+    except KeyError:
+        raise KeyError(f"unknown edge {name!r}; known: {', '.join(_EDGES)}") from None
