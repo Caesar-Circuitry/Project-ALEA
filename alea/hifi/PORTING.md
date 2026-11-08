@@ -84,7 +84,7 @@ without writing a rigid-body engine, which this branch does not do.
 2. **Contacts and G409** (`hiveContactPass`, `contacts3d.ts`, `contactPairsWith`, the Rapier
    collision groups): not ported. `g409_contacts.json` is recorded but not replayed.
 3. **Sleeping and waking.** Dsim pins the tray, Rapier then sleeps it, and the breakaway has to
-   wake the body and the elements (`hive3d.ts:304-321`). The port returns `wake` as a decision;
+   wake the body and the elements (`hive3d.ts:304-324`). The port returns `wake` as a decision;
    what sleeping does to the solve is the engine's.
 4. **The detent pin as a physical act.** `detent_decision` says "pin the pose and zero the
    velocity"; whether the body then stays exactly there (and what `trayTilt` reads, which needs
@@ -107,15 +107,32 @@ without writing a rigid-body engine, which this branch does not do.
    per alliance and copies the map, so the caller must feed red's returned `spill` into blue's
    call and keep the red-then-blue event order.
 9. **Readback rounding contract.** `hiveDynamicTick` reads `hive.angle` / `angVel` as rounded to
-   4 decimals by dsim's readback, while the detent reads the unrounded `trayTilt(body)`. The
-   caller must supply each in that form; the port does not round. The replays do so (rounded
-   columns for the tick, full-precision body columns for the detent).
+   4 decimals by dsim's readback (`engineImpl.ts:1450-1451`), while the detent reads the
+   unrounded `trayTilt(body)`. Ball positions are rounded the same way (`engineImpl.ts:1347-1349`).
+   `round4` is `Math.round(x * 1e4) / 1e4` (`math3.ts:138`): JavaScript rounds halves toward
+   +infinity, not to even, so a future caller must use JS rounding semantics (not Python's
+   `round`). The caller must supply each value in that form; the port does not round. The
+   replays do so (rounded columns for the tick, full-precision body columns for the detent).
 10. **The `useHiveDynamic()` gate** (`hive3d.ts:487`, which makes `hive3dJointTick` return at
    once on the kinematic tray) is not modelled. Harmless while `BB3_HIVE_DYNAMIC` is true, which
    `tests/test_hifi_hive3d_statics.py` asserts.
 11. **NaN.** `min` / `max` in `tippingFromAngle` and `hiveTiltAngle` follow JavaScript (NaN in,
    NaN out). Other NaN paths (for example `Math.sign(NaN)` comparisons) are not specially
    tested.
+12. **Contents membership is not yet ported** (`sim3d/derive.ts`: `insideCell(...,
+   minDepth=BB3_CELL_SEAT_DEPTH)` decides which elements count as hive contents). Unlike the
+   items above this is pure geometry and can be ported; it is simply not done. The loads replay
+   feeds `contents_n` from the recording instead.
+13. **Element positions are engine outputs too.** `hive_contents_torque` and the spill tagging
+   read ball positions, which come from Rapier like the tray angle (item 1), so they are inputs
+   here (recorded, or rebuilt by the test-side `fill_cell` for `joint_tick.json`).
+14. **Tick stage order a future engine must reproduce.** `hiveDetentHold` inside `applyHiveTilt`
+   before the solve (`engineImpl.ts:1074`, on the unrounded `trayTilt`); the solve; the readback
+   (rounding, item 9); `hive3dJointTick` (`step3dImpl.ts:210`); then `derive.ts`. The detent is
+   therefore one tick behind derive.
+15. **Small known differences.** `detent_decision` requires a hive, where dsim tolerates a
+   missing `world.biobuzz` (upSign 1, empty load, pins). Spill keys are int in Python and string
+   in dsim's JSON. Spill dict order is insertion order.
 
 Differences from `alea/game/` listed below still apply to the 3D numbers (the CAD cell boxes
 here are dsim's measurement of its own CAD export). Nothing from `alea/game/` is used.

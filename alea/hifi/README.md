@@ -6,7 +6,7 @@ High-fidelity option: hive tipping and ball-contact physics ported from dsim (ge
 - `LICENSE-dsim`: dsim's PolyForm Noncommercial 1.0.0 license, verbatim, with its required notice.
 - `PORTING.md`: what to port from dsim and in what order, the differences from `alea/game/` to resolve, and how to validate.
 - `hive.py`, `hive_constants.py`, `hive_math.py`: the port of dsim's `hive.ts` (capture, load against the tip table, swing timer, release and spill, miss deflection). Uses dsim's numbers, not `alea/game`'s; replayed against `tests/hifi_traces/` by `tests/test_hifi_hive_*.py`.
-- `hive3d.py`, `hive3d_constants.py`, `math3.py`: the pure part of dsim's `sim3d/hive3d.ts` (torques, `insideCell`, swing bookkeeping from a caller-supplied tray angle, the detent decision). No solver; the swing is not reproduced. Replayed against `tests/hifi_traces/sim3d/` by `tests/test_hifi_hive3d_*.py`; limits in `PORTING.md`.
+- `hive3d.py`, `hive3d_constants.py`, `math3.py`: the pure part of dsim's `sim3d/hive3d.ts` (torques, `insideCell`, swing bookkeeping from a caller-supplied tray angle, the detent decision). No solver; the swing is not reproduced. Replayed against `tests/hifi_traces/sim3d/` by `tests/test_hifi_hive3d_*.py`; element positions are inputs too, and contents membership (`derive.ts`) is not yet ported; limits in `PORTING.md`.
 - `check_fidelity(fidelity)`: validates the `fidelity: fast | hifi` option. `fast` is the Warp simulator; `hifi` raises `NotImplementedError` pointing at decision 0005.
 - `python -m alea.sim.run_study --fidelity fast|hifi` (or `fidelity:` in the study YAML) uses it.
 
