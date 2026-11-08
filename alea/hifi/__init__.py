@@ -9,12 +9,7 @@ DSIM_VERSION = (Path(__file__).with_name("DSIM_VERSION")).read_text(encoding="ut
 
 
 def check_fidelity(fidelity: str) -> str:
-    """Validate a fidelity setting. "fast" is the Warp simulator; "hifi" is not ported yet."""
+    """Validate a fidelity setting: "fast" (Warp shots) or "hifi" (plus the dsim hive logic)."""
     if fidelity not in FIDELITY_CHOICES:
         raise ValueError(f"fidelity must be one of {FIDELITY_CHOICES}, got {fidelity!r}")
-    if fidelity == "hifi":
-        raise NotImplementedError(
-            "fidelity 'hifi' (dsim hive tipping and ball contacts) is not ported yet; "
-            "see docs/decisions/0005-hifi-dsim-port.md. Use fidelity 'fast'."
-        )
     return fidelity

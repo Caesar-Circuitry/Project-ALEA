@@ -9,6 +9,11 @@ The Brev run: every condition in the study config x 1,000,000 shots.
 Command-line flags override the config file. Results go to the output directory (default
 results/study, git-ignored): one file per condition (so a stopped run picks up where it left
 off), then summary.csv and plots once everything is done.
+
+Fidelity "hifi" (--fidelity hifi, or `fidelity: hifi` plus a `hifi:` block in the YAML) runs the
+same fast shot kernel and then the dsim hive sessions (alea/hifi/hive_session.py). Its results
+are labelled and kept apart: default directory results/study-hifi, files cond_hifi_XXX.npz and
+summary_hifi.csv. A directory holding fast results refuses hifi output and vice versa.
 """
 
 import argparse
@@ -22,6 +27,8 @@ import warp as wp
 import yaml
 
 from alea.hifi import FIDELITY_CHOICES, check_fidelity
+from alea.hifi.hifi_study import DEFAULT_OUT as HIFI_DEFAULT_OUT
+from alea.hifi.hifi_study import HifiParams, params_match, run_condition
 from alea.sim import plots, results, selftest
 from alea.sim.conditions import all_conditions
 from alea.sim.study import Study
@@ -52,11 +59,20 @@ def main(argv=None):
     a = parse_args(argv)
     with Path(a.config).open(encoding="utf-8") as fh:
         cfg = yaml.safe_load(fh) or {}
-    check_fidelity(a.fidelity if a.fidelity is not None else cfg.get("fidelity", "fast"))
+    fidelity = check_fidelity(a.fidelity if a.fidelity is not None else cfg.get("fidelity", "fast"))
+    hifi_params = HifiParams.from_config(cfg.get("hifi")) if fidelity == "hifi" else None
     shots = int(a.shots if a.shots is not None else cfg.get("shots", 1e6))
     batch = int(a.batch if a.batch is not None else cfg.get("batch", 1e6))
     seed = int(a.seed if a.seed is not None else cfg.get("seed", 24331))
     out = Path(a.out if a.out is not None else cfg.get("out", "results/study"))
+    if fidelity == "hifi" and a.out is None and out == Path("results/study"):
+        # The YAML's fast default must not receive hifi results. We cannot tell an explicit
+        # `out: results/study` from the default, so say so rather than redirect silently.
+        out = Path(HIFI_DEFAULT_OUT)
+        print(f"fidelity hifi: output redirected from results/study to {out} (--out overrides)")
+    held = results.detect_fidelity(out) if out.exists() else None
+    if held is not None and held != fidelity:
+        sys.exit(f"{out} holds {held} results; refusing to write {fidelity} results there")
     if shots > 2_000_000_000:
         sys.exit("at most 2 billion shots per condition (random-number offsets are 32-bit)")
 
@@ -91,17 +107,38 @@ def main(argv=None):
         return
 
     out.mkdir(parents=True, exist_ok=True)
+    print(f"fidelity: {fidelity}   output: {out}")
     t_start = time.time()
     for i, c in enumerate(conds):
-        fn = out / f"cond_{c['id']:03d}.npz"
+        fn = results.cond_path(out, c["id"], fidelity)
         if fn.exists():
             z = np.load(fn)
-            if int(z["shots"]) == shots and int(z["seed"]) == seed:
+            if (
+                int(z["shots"]) == shots
+                and int(z["seed"]) == seed
+                and (hifi_params is None or params_match(z, hifi_params))
+            ):
                 print(f"[{i + 1}/{len(conds)}] already done, skipping")
                 continue
         t0 = time.time()
-        tries, fired, hits = st.run(c, shots, seed=seed + 1000 * c["id"], batch=batch)  # pyright: ignore[reportAssignmentType]
-        np.savez_compressed(fn, tries=tries, fired=fired, hits=hits, shots=shots, seed=seed, **c)
+        if hifi_params is not None:
+            tries, fired, hits, sess = run_condition(st, c, shots, seed, batch, hifi_params)
+            np.savez_compressed(
+                fn,
+                tries=tries,
+                fired=fired,
+                hits=hits,
+                shots=shots,
+                seed=seed,
+                fidelity="hifi",
+                **sess,
+                **c,
+            )
+        else:
+            tries, fired, hits = st.run(c, shots, seed=seed + 1000 * c["id"], batch=batch)  # pyright: ignore[reportAssignmentType]
+            np.savez_compressed(
+                fn, tries=tries, fired=fired, hits=hits, shots=shots, seed=seed, **c
+            )
         p = hits.sum() / max(fired.sum(), 1)
         print(
             f"[{i + 1}/{len(conds)}] aim {c['aim_deg']} deg, speed {c['speed_pct']}%, "
@@ -112,13 +149,18 @@ def main(argv=None):
 
     rows = []
     for c in conds:
-        z = np.load(out / f"cond_{c['id']:03d}.npz")
-        rows.append(results.summary_row(c, z))
-    with (out / "summary.csv").open("w", newline="", encoding="utf-8") as fh:
+        z = np.load(results.cond_path(out, c["id"], fidelity))
+        row = results.summary_row(c, z)
+        if fidelity == "hifi":
+            row["fidelity"] = "hifi"
+            row.update({k: z[k].item() for k in z.files if k.startswith("hive_")})
+        rows.append(row)
+    summary_fn = results.summary_path(out, fidelity)
+    with summary_fn.open("w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0]))
         w.writeheader()
         w.writerows(rows)
-    print(f"\ndone in {(time.time() - t_start) / 60:.1f} min -> {out / 'summary.csv'}")
+    print(f"\ndone in {(time.time() - t_start) / 60:.1f} min -> {summary_fn}")
     plots.main(out)
 
 

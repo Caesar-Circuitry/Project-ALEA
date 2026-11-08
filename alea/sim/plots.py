@@ -21,7 +21,7 @@ from alea.sim.study import CELL, TARGET_X, TARGET_Y, Y_MAX
 MIN_FIRED = 30  # cells with fewer fired shots than this are left blank (too few to trust)
 
 
-def heatmap(z, title, fn):
+def heatmap(z, title, fn, label=""):
     T, F, H = z["tries"], z["fired"], z["hits"]
     rate = np.where(F >= MIN_FIRED, H / np.maximum(F, 1), np.nan)
     hold = (T > 0) & (F == 0)
@@ -51,7 +51,7 @@ def heatmap(z, title, fn):
     ax.set_aspect("equal")
     ax.set_xlabel("x (in)")
     ax.set_ylabel("y (in)")
-    ax.set_title(title, fontsize=10)
+    ax.set_title(f"{label}{title}", fontsize=10)
     fig.colorbar(im, ax=ax, label="% of shots that score", shrink=0.8)
     ax.text(
         1,
@@ -60,18 +60,36 @@ def heatmap(z, title, fn):
         "dark grey = robot can't be there (walls, hive frame rails)",
         fontsize=7,
     )
-    fig.tight_layout()
+    if label:
+        _hifi_caption(fig, str(z["hive_caveat"]) if "hive_caveat" in z.files else "")
+    fig.tight_layout(rect=(0, 0.06, 1, 1) if label else None)
     fig.savefig(fn)
     plt.close(fig)
+
+
+def _hifi_caption(fig, caveat: str):
+    """Bottom caption on hifi plots: the numbers shown are the fast kernel's."""
+    text = "shot kernel = fast; hive results in summary_hifi.csv"
+    if caveat:
+        text += "\n" + caveat
+    fig.text(0.5, 0.005, text, ha="center", va="bottom", fontsize=6)
 
 
 def main(out: str | Path = "results/study"):
     out = Path(out)
     rows = results.load_summary(out)
+    fidelity = results.detect_fidelity(out) or "fast"
+    tag = f"[{fidelity}] " if fidelity == "hifi" else ""
+    prefix = "hifi_" if fidelity == "hifi" else ""
 
     worst = results.worst_best(rows, 1)[0][0]
     for r, fn in [(rows[0], "heatmap_normal.png"), (worst, "heatmap_worst.png")]:
-        heatmap(np.load(out / f"cond_{int(r['id']):03d}.npz"), results.describe(r), out / fn)
+        heatmap(
+            np.load(results.cond_path(out, int(r["id"]), fidelity)),
+            results.describe(r),
+            out / (prefix + fn),
+            tag,
+        )
 
     groups = list(results.factor_effects(rows).items())
     fig, axs = plt.subplots(1, len(groups), figsize=(14, 3.6), dpi=150, sharey=True)
@@ -84,9 +102,11 @@ def main(out: str | Path = "results/study"):
         ax.set_title(label, fontsize=10)
         ax.set_ylim(0, 100)
     axs[0].set_ylabel("% of fired shots that score")
-    fig.suptitle("Effect of each variable (averaged over all the others)", fontsize=11)
-    fig.tight_layout()
-    fig.savefig(out / "effects.png")
+    fig.suptitle(f"{tag}Effect of each variable (averaged over all the others)", fontsize=11)
+    if tag:
+        _hifi_caption(fig, str(rows[0].get("hive_caveat", "")))
+    fig.tight_layout(rect=(0, 0.06, 1, 1) if tag else None)
+    fig.savefig(out / f"{prefix}effects.png")
     plt.close(fig)
     print(f"plots written to {out}/")
 

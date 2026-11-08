@@ -36,7 +36,7 @@ Each phase has its own folder in the repository. The goal of each one:
 <ol class="ep-timeline">
 <li><b>Phase 0 · Data contract</b>Every robot log and match result lands in one database. <code>robot/</code> · <code>alea/data/</code></li>
 <li><b>Phase 1 · Shot simulator</b>Monte Carlo studies on Brev GPUs, with results in notebooks. <code>alea/sim/</code> · <code>alea/game/</code> · <code>hpc/</code></li>
-<li><b>Phase 1b · High fidelity</b>dsim's pure hive logic is ported and replayed against dsim traces; ball contacts and the 3D hive are not, and nothing is integrated (<code>fidelity: hifi</code> still raises). <code>alea/hifi/</code></li>
+<li><b>Phase 1b · High fidelity</b>dsim's pure hive logic is ported and replayed against dsim traces; ball contacts and the 3D hive are not, and <code>fidelity: hifi</code> runs the fast kernel plus hive sessions on the ported logic. <code>alea/hifi/</code></li>
 <li><b>Phase 2 · Video review</b>Field homography, click-and-log, then tracking. <code>alea/video/</code></li>
 <li><b>Phases 3-5 · Analysis</b>Calibrate the sim on real shots, driver critique, robot health. <code>alea/analysis/</code></li>
 <li><b>Phase 6 · Web app</b>Streamlit for the team, a FastAPI service later. <code>alea/web/</code></li>

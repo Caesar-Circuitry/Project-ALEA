@@ -1,0 +1,21 @@
+# fidelity: hifi example = fast shot kernel (unchanged) + dsim hive sessions.
+# The four values in `hifi:` are OPEN parameters nobody has measured or decided. The numbers
+# below are placeholders to make a smoke run work; set them yourself before reading results.
+# Restitution is not here: it is the `bounce` axis of the conditions, as in the fast study.
+# tick_s is not a key either: the 1/60 s step is dsim's timer resolution, fixed in code.
+fidelity: hifi
+shots: 100000
+batch: 100000
+seed: 24331
+out: results/study-hifi    # hifi results never share a directory with fast ones
+hifi:
+  n_sessions: 200          # OPEN placeholder: sessions per condition
+  shots_per_session: 30    # OPEN placeholder: fired shots per session
+  shot_interval_s: 3.0     # OPEN placeholder: seconds between shots, not measured
+  retarget_after_tip: true # OPEN: aim at the cell now taking elements (true) or the starting cell (false)
+conditions:
+  aim_deg: [1.0, 2.0]
+  speed_pct: [2.0]
+  robot_ips: [0.0]
+  ball_in: [2.8]
+  bounce: [0.45, 0.60]

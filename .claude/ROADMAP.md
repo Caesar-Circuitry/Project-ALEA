@@ -4,7 +4,7 @@ Where the repo is, what each pull request delivers, and where the project goes a
 Read this before starting a PR. Update the status table when a PR merges (the `/pr` skill
 reminds you).
 
-Last updated: 2026-11-07.
+Last updated: 2026-11-08.
 
 ## Setup PRs: status
 
@@ -142,6 +142,12 @@ Each `alea/` subfolder belongs to a phase; its README says which.
 | 3-5 | Analysis | `alea/analysis/` | Calibrate the sim on real shots, driver critique, robot health |
 | 6 | Web app | `alea/web/` | Streamlit for the team, FastAPI service later |
 | 7 | Match simulation | `alea/matchsim/` | Full auto and match simulation on top of the shot sim |
+
+**Phase 1b status (2026-11-08).** Merged: #33 (pin, inventory), #35 (2D traces), #36 (2D hive
+logic), #37 (CAD evidence). In flight: `feature/1b-3d-port` (3D hive arithmetic and traces) and
+`feature/1b-hifi-wire` (`fidelity: hifi` wiring, stacked on 3d-port). Remaining: the
+engine/contacts decision for the user (Warp/NumPy rigid-body layer or stop at the table-driven
+tip), and the open geometry and restitution items in `alea/hifi/PORTING.md`.
 
 Phase work uses `feature/<phase>-<topic>` branches, one PR each. Large ports (the dsim port in
 1b) are the kind of job `orchestrator` exists for, and only with the user's approval.
