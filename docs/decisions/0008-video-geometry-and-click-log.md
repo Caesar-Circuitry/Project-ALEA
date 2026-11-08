@@ -96,3 +96,5 @@ Inputs the design has to work with:
   the landing height for hive cells (49.13 in, to be confirmed on the real hive), the heading
   prior's sign convention, and whether tile-seam landmarks are wanted at all.
 - Phase 3 gets a measured efficiency per launch. It can then replace the fixed 0.45 in the sim.
+
+Amended by 0009 (2026-11-08): reflection-first; calibration via hive-shot-lab.

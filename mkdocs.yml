@@ -38,6 +38,8 @@ nav:
   - Knowledge base: knowledge-base.md
   - Technical binder: technical-binder.md
   - Robot interface: robot-interface.md
+  - Guides:
+      - Calibration protocol: calibration-protocol.md
   - Decisions:
       - decisions/README.md
       - 0001 Scope and stack: decisions/0001-scope-and-stack.md
@@ -48,3 +50,4 @@ nav:
       - 0006 Agent sandbox: decisions/0006-agent-sandbox.md
       - 0007 Launch detection: decisions/0007-launch-detection.md
       - 0008 Video geometry and click log: decisions/0008-video-geometry-and-click-log.md
+      - 0009 Reflection first rescope: decisions/0009-reflection-first-rescope.md

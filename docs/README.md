@@ -27,6 +27,7 @@ A Monte Carlo shot simulator for BIOBUZZ 2026-27. **72 million shots in 72 secon
 [<b>Technical binder</b>The judge-facing write-up of the simulator.](technical-binder.md){ .ep-tile }
 [<b>Robot interface</b>What a robot must log so ALEA can read it.](robot-interface.md){ .ep-tile }
 [<b>Decisions</b>Why the project is built the way it is, one record per choice.](decisions/README.md){ .ep-tile }
+[<b>Calibration protocol</b>How to film one launcher shot in slow motion for hive-shot-lab.](calibration-protocol.md){ .ep-tile }
 </div>
 
 ## Where it is going {.ep-h}
