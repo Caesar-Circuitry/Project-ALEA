@@ -6,12 +6,20 @@ speed and launcher efficiency comes out. Design: [decision 0008](../../docs/deci
 Status: stubs only. Stage 2.0 adds the plan and the decision. Code lands in stages 2.1 to 2.6,
 listed under "Phase 2: video review" in `.claude/ROADMAP.md`.
 
+Footage is the FTC livestream. The camera is static within a video, but its location differs
+from one event to the next. So each video gets one calibration, fitted from the known field
+landmarks visible in that setup. Each event gets its own calibration file. Expect wide error
+bars on livestream footage: variable frame rate and partly visible landmarks add error. Panning
+or zooming cameras are out of scope for v1.
+
 What goes here, by stage:
 
 - 2.1: `landmarks.py` (field landmarks from `alea.game.biobuzz` only), `geometry.py` (floor
-  homography, camera fit, refinement, residuals), `calibration.py` (calibration JSON).
-- 2.2: `frames.py` (video reader), `clicklog.py` (JSONL click log, CSV export), `review.py` and
-  `__main__.py` (matplotlib review UI).
+  homography, pinhole refinement, residuals), `calibration.py` (one calibration JSON per video,
+  fitted from landmark clicks pooled across that video's frames).
+- 2.2: `frames.py` (video reader), `clicklog.py` (JSONL click log: landmark clicks, which feed
+  the fit, and shot, robot and ball clicks, none of them baking in a calibration; flat CSV
+  export), `review.py` and `__main__.py` (matplotlib review UI with a mark-landmarks mode).
 - 2.3: `ballistics.py` (image-space fit), `sync.py` (video-to-log time offset), `efficiency.py`
   (efficiency columns for `launches.csv`).
 - 2.4: a landmark diagram script goes in `tools/`, with its own README.

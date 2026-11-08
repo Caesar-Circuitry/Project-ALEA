@@ -144,7 +144,7 @@ new folder, no file over 1 MB outside `tests/golden/`, no footage or secrets in 
 `just lint` and `just test` green. Agents run shell work through `just dev`.
 
 ### 2.0: roadmap and decision record (`docs/2-video-plan`)
-- Deliver: this phase 2 section; decision 0008 (full camera model over a floor homography, raw
+- Deliver: this phase 2 section; decision 0008 (one calibration per video, floor homography plus pinhole refinement, raw
   clicks as truth, JSONL before a database, GPU tracking behind a dependency group); the phase 2
   lines in `alea/video/README.md` and `docs/README.md`; 0008 in `mkdocs.yml` and
   `docs/decisions/README.md`.
@@ -156,31 +156,47 @@ new folder, no file over 1 MB outside `tests/golden/`, no footage or secrets in 
   `alea.game.biobuzz` (field corners at z = 0 and at the wall top, hive pivots, hive frame
   corners that are occupied); `alea/video/geometry.py`, with `fit_homography` (floor, at least 4
   points, normalised DLT), `camera_from_homography` (focal length, rotation, position; square
-  pixels, centred principal point), `refine_camera` (Gauss-Newton on floor and off-floor points),
-  `project`, `ray`, `point_on_plane_z`, per-landmark and leave-one-out residuals, a floor
-  uncertainty ellipse per point and degeneracy warnings; `alea/video/calibration.py`, the
-  `Calibration` dataclass with JSON read and write and a `schema_version`.
-- Tests: `tests/test_video_geometry.py`, `tests/test_video_landmarks.py`.
+  pixels, centred principal point), `refine_camera` (Gauss-Newton on every visible landmark,
+  floor and off-floor), `project`, `ray`, `point_on_plane_z`, per-landmark and leave-one-out
+  residuals, a floor uncertainty ellipse per point and degeneracy warnings;
+  `alea/video/calibration.py`, a `Calibration` with one camera per video (the setup is static
+  within a video). It is fitted from landmark clicks pooled from any frames of that video, using
+  whichever known landmarks are visible: a floor homography from at least 4 floor points, and
+  the pinhole refinement when wall-top or hive-frame points are also clicked. JSON read and
+  write, and a `schema_version`. Each event gets its own calibration file.
+- Out of scope for v1: a panning or zooming camera, frame-to-frame propagation of landmarks, and
+  any extrapolation flag. A panning camera would need a separate decision.
+- Tests: `tests/test_video_geometry.py`, `tests/test_video_landmarks.py`,
+  `tests/test_video_calibration.py` (pooling clicks from several frames, JSON round-trip).
 - Done when: on a synthetic 1080p broadcast camera with 10 landmarks and 1 px click noise, RMS
   reprojection is at most 1.5 px, floor position error at most 2 in, focal length within 3 %, and
   a point at z = 49 in within 2 in; fewer than 4 floor points, or collinear floor points, raise;
-  the suite stays green without the `video` extra (`pytest.importorskip("cv2")`).
+  landmark clicks taken from different synthetic frames of one video give the same calibration
+  as clicks from a single frame; the suite stays green without the `video` extra
+  (`pytest.importorskip("cv2")`). These synthetic targets are for a static camera; real
+  livestream footage is measured in 2.4 and has wider error bars.
 - Blocked on: 2.0 merged.
 
 ### 2.2: click log and review UI (`feature/2-click-log`)
 - Deliver: `alea/video/frames.py`, `VideoReader` over `cv2.VideoCapture` (fps, frame count, seek
-  by frame index, presentation time of each frame); `alea/video/clicklog.py`, `ShotObservation`
-  with JSONL read and write and flat CSV export (`launches.csv`, `track_points.csv`);
-  `alea/video/review.py` and `alea/video/__main__.py`, a matplotlib UI run as
+  by frame index, presentation time of each frame); `alea/video/clicklog.py`, JSONL read and
+  write with a record type for each click kind: landmark clicks (frame, landmark id, `u_px`,
+  `v_px`) and shot, robot and ball-track clicks (frame, `u_px`, `v_px`, presentation time).
+  Landmark clicks feed the fit in 2.1. Clicks never bake in a calibration. Each video's metadata
+  references one calibration JSON, and derived inches are never stored in the click log. Flat
+  CSV export (`launches.csv`, `track_points.csv`) from the same records; `alea/video/review.py`
+  and `alea/video/__main__.py`, a matplotlib UI run as
   `python -m alea.video review <video> --calibration cal.json --out shots.jsonl`, with keyboard
-  modes for calibrate, robot, launch, ball track, landing and outcome, plus undo and autosave
-  after every record; the manual checklist goes in `alea/video/README.md`.
+  modes for mark-landmarks, robot, launch, ball track, landing and outcome, plus undo and
+  autosave after every record; the manual checklist goes in `alea/video/README.md`.
 - Tests: `tests/test_video_clicklog.py`, `tests/test_video_frames.py`,
   `tests/test_video_review_ui.py`.
-- Done when: a schema round-trip passes and a mismatched `schema_version` is rejected; a 30-frame
-  MJPG clip written at test time reads back with 30 frames and seeks to frame 17; the UI state
-  machine passes injected matplotlib events on the Agg backend; the user has run the manual
-  checklist on a local clip.
+- Done when: a schema round-trip passes for every record type, and a mismatched `schema_version`
+  is rejected; a landmark-click record and a shot record that cites a calibration JSON both
+  round-trip, and no record stores inches; a 30-frame MJPG clip written at test time reads back
+  with 30 frames and seeks to frame 17; the UI state machine passes injected matplotlib events on
+  the Agg backend, including mark-landmarks; the user has run the manual checklist on a local
+  clip.
 - Blocked on: 2.0 merged. Can run in parallel with 2.1 in a separate worktree.
 
 ### 2.3: ballistic fit, sync and efficiency (`feature/2-shot-fit`)
