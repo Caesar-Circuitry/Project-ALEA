@@ -12,6 +12,8 @@ from typing import Any
 
 import numpy as np
 
+from alea.game.biobuzz import TICKS_TO_IN_S
+
 # placeholder: last factor of alea.game.TICKS_TO_IN_S; a physics-reviewed PR should export it
 # from alea.game
 SIM_ASSUMED_EFFICIENCY = 0.45
@@ -41,7 +43,9 @@ COLUMNS = [
 ]
 _INT = {"shot_index", "burst_index", "burst_size"}
 _STR = {"measurement_id", "source", "video_file", "launch_id", "result", "notes"}
-_WHEEL_IN_PER_TICK = 1.0 / 28 * 2 * math.pi * 1.89  # StarterBot, 1:1 drive
+_WHEEL_IN_PER_TICK = (
+    TICKS_TO_IN_S / SIM_ASSUMED_EFFICIENCY
+)  # = 1/28 * 2*pi*1.89 in per tick; see alea/game/biobuzz.py TICKS_TO_IN_S
 
 
 def synthetic_rows(seed: int = 24331, n_shots: int = 40) -> list[dict[str, Any]]:
