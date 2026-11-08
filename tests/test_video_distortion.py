@@ -319,16 +319,6 @@ def test_calibration_json_with_distortion_and_edges(tmp_path) -> None:
     assert len(edge_records) == 48 and all(c.residual_px is not None for c in edge_records)
 
 
-def test_version1_file_without_distortion_still_reads(tmp_path) -> None:
-    cam = look_at(*SCENES["telephoto"][:2], 1920, 1080)
-    cl = [ClickedLandmark(n, *px_of(cam, landmarks_xyz_in([n])[0])) for n in NAMES]
-    cal = calibrate(cl, VideoInfo())
-    d = cal.to_dict()
-    del d["camera"]["distortion"], d["k1_sigma"], d["click_noise_px"]
-    back = Calibration.from_dict(d)
-    assert back.camera is not None and back.camera.k1 == 0.0 and back.k1_sigma is None
-
-
 def test_snap_corner_improves_a_click() -> None:
     cv2 = pytest.importorskip("cv2")
     from alea.video.subpixel import snap_corner

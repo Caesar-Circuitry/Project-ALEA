@@ -49,5 +49,16 @@ from several frames of the same video may be pooled. Nothing assumes a shared ca
 - **Sub-pixel snap.** `subpixel.snap_corner` (needs the `video` extra) refines a click to the
   local corner with `cv2.cornerSubPix`; optional.
 
-Accuracy on synthetic cameras is asserted in `tests/test_video_geometry.py` and
-`tests/test_video_distortion.py` (no real footage is committed).
+Accuracy on synthetic cameras is asserted in `tests/test_video_geometry.py`,
+`tests/test_video_distortion.py` and `tests/test_video_calibration.py` (no real footage is
+committed). Read these numbers honestly:
+
+- The plan's targets (RMS reprojection <= 1.5 px, focal error <= 3 %, floor error <= 2 in,
+  error of a point at z = 49 in <= 2 in; 10 landmarks, 1 px click noise) are met on the **mean
+  over noise seeds**, not on every single trial. The tests also enforce looser worst-case
+  bounds: RMS <= 2.0 px, focal error <= 8 %, floor and airborne position error <= 4 in.
+- For an oblique wide camera the airborne error stays around 1 to 3 in even with distortion
+  modelled; a telephoto view or a camera square to the field does better.
+- These are clean synthetic results: exact lens model, exact landmark coordinates, Gaussian
+  click noise. Real footage (compression blur, tape and tile offsets, an imperfect lens model)
+  will be worse.

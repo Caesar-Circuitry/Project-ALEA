@@ -1,10 +1,8 @@
 """Landmark ids match the click log's (feature/2-click-log) and custom ids are ignored."""
 
-import numpy as np
 import pytest
 
 from alea.game import biobuzz as g
-from alea.video.calibration import ClickedLandmark, VideoInfo, calibrate
 from alea.video.landmarks import get_landmark, is_custom_id, landmark_table
 
 # Copied from known_landmark_ids() in alea/video/landmark_ids.py on branch feature/2-click-log
@@ -47,30 +45,7 @@ def test_mouths_use_game_constants() -> None:
     assert lm.on_floor
 
 
-def test_custom_ids_are_unknown_and_ignored_with_warning() -> None:
+def test_custom_ids_are_not_landmarks() -> None:
     assert is_custom_id("custom_tile_seam_a")
     with pytest.raises(KeyError):
         get_landmark("custom_tile_seam_a")
-    px = {
-        "field_floor_corner_xlo_ylo": (500.0, 900.0),
-        "field_floor_corner_xhi_ylo": (1400.0, 900.0),
-        "field_floor_corner_xlo_yhi": (700.0, 600.0),
-        "field_floor_corner_xhi_yhi": (1200.0, 600.0),
-    }
-    clicks = [ClickedLandmark(n, u, v) for n, (u, v) in px.items()]
-    clicks.append(ClickedLandmark("custom_tile_seam_a", 900.0, 700.0))
-    cal = calibrate(clicks, VideoInfo())
-    assert len(cal.landmarks) == 4 and np.isfinite(cal.rms_reprojection_px)
-    assert any("custom_tile_seam_a" in w for w in cal.warnings)
-
-
-def test_calibration_json_carries_schema_and_setup_id() -> None:
-    px = {
-        "field_floor_corner_xlo_ylo": (500.0, 900.0),
-        "field_floor_corner_xhi_ylo": (1400.0, 900.0),
-        "field_floor_corner_xlo_yhi": (700.0, 600.0),
-        "field_floor_corner_xhi_yhi": (1200.0, 600.0),
-    }
-    clicks = [ClickedLandmark(n, u, v) for n, (u, v) in px.items()]
-    d = calibrate(clicks, VideoInfo(), camera_setup_id="EVT-aud").to_dict()
-    assert d["schema_version"] == 1 and d["camera_setup_id"] == "EVT-aud"
