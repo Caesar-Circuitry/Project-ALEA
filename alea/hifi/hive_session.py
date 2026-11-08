@@ -35,7 +35,8 @@ What is NOT modelled
   used, so position-dependent scoring and fire-hold are inside `p_score`, not in the session.
 * The hive is at rest in the kernel during the swing (kernel limit), so every `hive_*` result
   is a session-model output, not measured physics. Each hifi record carries that as the
-  `hive_caveat` label (no numeric effect).
+  `hive_caveat` label (no numeric effect); it also says the four session parameters are
+  open placeholders, not measured.
 * Restitution is not used by the hive logic here (`hive_deflect`, the only user of dsim's
   0.3 miss bounce, is not called). It enters only through the study's per-condition `bounce`
   axis, in the fast kernel. It is an OPEN number (PORTING.md evidence item 9); nothing is chosen.
@@ -43,13 +44,28 @@ What is NOT modelled
   (PORTING.md items 4 to 6). Frame: see `alea.hifi.frame`; positions here are only used for the
   capture test.
 
+How the `hive_*` columns count (read before quoting them)
+----------------------------------------------------------
+* `hive_spilled_mean` includes the 3 staged nectar (`initial_nectar`) when they spill.
+* A ball captured before the release counts in both `hive_captured_mean` and
+  `hive_spilled_mean` if it then spills.
+* The let-swing-finish loop after the last shot can count a tip that completes after the last
+  shot (so `hive_tips_mean` can include one the shot sequence did not wait for).
+* `hive_first_swing_start_s_mean` and `hive_first_tip_done_s_mean` average only over sessions
+  that tipped (NaN if none did).
+* With `retarget_after_tip: false` every aimed ball keeps the starting cell, so after the first
+  tip every later scored ball is rejected and the hive cannot tip again.
+* `hive_tick_s` and `hive_alliance` record the (fixed) tick and alliance used; a resumed run
+  only reuses a condition file whose values match.
+
 Explicit parameters (no default is chosen for the first four; see `SessionParams`)
 -----------------------------------------------------------------------------------
 `n_sessions`, `shots_per_session`, `shot_interval_s` (how often the robot shoots, not measured),
 `retarget_after_tip` (does the driver aim at whichever cell is taking elements now, or keep
 aiming at the cell that was up at the start). `initial_nectar` defaults to the field-setup
 evidence; `shot_interval_s` must be a whole multiple of `tick_s` (else ValueError, no silent
-rounding); `tick_s` is numerical resolution (1/60 s as in the dsim timer traces); `alliance` is red.
+rounding); `tick_s` is numerical resolution (1/60 s as in the dsim timer traces; not settable
+from the study YAML); `alliance` is red.
 """
 
 from collections.abc import Callable
@@ -84,6 +100,8 @@ SUMMARY_KEYS = (
     "hive_shot_interval_s",
     "hive_retarget_after_tip",
     "hive_initial_nectar",
+    "hive_tick_s",
+    "hive_alliance",
     "hive_p_score_input",
     "hive_tips_mean",
     "hive_tips_sd",
@@ -223,6 +241,8 @@ def run_sessions(p_score: float, params: SessionParams, seed_key: list[int]) -> 
         "hive_shot_interval_s": params.shot_interval_s,
         "hive_retarget_after_tip": int(params.retarget_after_tip),
         "hive_initial_nectar": params.initial_nectar,
+        "hive_tick_s": params.tick_s,
+        "hive_alliance": params.alliance,
         "hive_p_score_input": p_score,
         "hive_tips_mean": float(tips.mean()),
         "hive_tips_sd": float(tips.std()),

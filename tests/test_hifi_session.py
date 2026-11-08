@@ -26,6 +26,16 @@ def test_open_parameters_have_no_default():
                 shots_per_session=1,
                 shot_interval_s=1,
                 retarget_after_tip=True,
+                tick_s=0.01,
+            )
+        )
+    with pytest.raises(ValueError, match="unknown"):
+        HifiParams.from_config(
+            dict(
+                n_sessions=1,
+                shots_per_session=1,
+                shot_interval_s=1,
+                retarget_after_tip=True,
                 restitution=0.5,
             )
         )
@@ -53,9 +63,9 @@ def test_deterministic_and_seeded():
     b = run_sessions(0.6, _params(), [5, 0, 1])
     assert a.keys() == b.keys()
     for k in a:
-        assert a[k] == b[k] or (np.isnan(a[k]) and np.isnan(b[k]))
+        assert a[k] == b[k] or (a[k] != a[k] and b[k] != b[k])
     c = run_sessions(0.6, _params(), [6, 0, 1])
-    assert any(a[k] != c[k] for k in a if not np.isnan(a[k]))
+    assert any(a[k] != c[k] for k in a if a[k] == a[k])
 
 
 def test_retarget_is_an_explicit_choice_that_matters():
@@ -158,3 +168,19 @@ def test_plot_suptitle_fast_and_hifi(tmp_path, monkeypatch):
     base = "Effect of each variable (averaged over all the others)"
     assert _suptitle(monkeypatch, fast) == base  # exactly the origin/main text
     assert _suptitle(monkeypatch, hifi) == "[hifi] " + base
+
+
+def test_params_match_checks_tick_alliance_and_caveat():
+    from alea.hifi.hifi_study import LABEL_TEXT
+    from alea.hifi.hive_session import run_sessions
+
+    for k in ("n_sessions", "shots_per_session", "shot_interval_s", "retarget_after_tip"):
+        assert k in LABEL_TEXT
+    assert "open placeholders" in LABEL_TEXT and "not measured" in LABEL_TEXT
+    sp = _params(shot_interval_s=2.0)
+    z = run_sessions(0.5, sp, [1])
+    assert params_match(z, HifiParams(sp))
+    assert not params_match(z, HifiParams(_params(shot_interval_s=2.0, tick_s=1 / 120)))
+    assert not params_match(z, HifiParams(_params(shot_interval_s=2.0, alliance="blue")))
+    old = {k: v for k, v in z.items() if k not in ("hive_tick_s", "hive_alliance")}
+    assert not params_match(old, HifiParams(sp))

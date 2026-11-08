@@ -2,6 +2,7 @@
 # The four values in `hifi:` are OPEN parameters nobody has measured or decided. The numbers
 # below are placeholders to make a smoke run work; set them yourself before reading results.
 # Restitution is not here: it is the `bounce` axis of the conditions, as in the fast study.
+# tick_s is not a key either: the 1/60 s step is dsim's timer resolution, fixed in code.
 fidelity: hifi
 shots: 100000
 batch: 100000

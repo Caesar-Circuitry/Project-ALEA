@@ -60,9 +60,19 @@ def heatmap(z, title, fn, label=""):
         "dark grey = robot can't be there (walls, hive frame rails)",
         fontsize=7,
     )
-    fig.tight_layout()
+    if label:
+        _hifi_caption(fig, str(z["hive_caveat"]) if "hive_caveat" in z.files else "")
+    fig.tight_layout(rect=(0, 0.06, 1, 1) if label else None)
     fig.savefig(fn)
     plt.close(fig)
+
+
+def _hifi_caption(fig, caveat: str):
+    """Bottom caption on hifi plots: the numbers shown are the fast kernel's."""
+    text = "shot kernel = fast; hive results in summary_hifi.csv"
+    if caveat:
+        text += "\n" + caveat
+    fig.text(0.5, 0.005, text, ha="center", va="bottom", fontsize=6)
 
 
 def main(out: str | Path = "results/study"):
@@ -93,7 +103,9 @@ def main(out: str | Path = "results/study"):
         ax.set_ylim(0, 100)
     axs[0].set_ylabel("% of fired shots that score")
     fig.suptitle(f"{tag}Effect of each variable (averaged over all the others)", fontsize=11)
-    fig.tight_layout()
+    if tag:
+        _hifi_caption(fig, str(rows[0].get("hive_caveat", "")))
+    fig.tight_layout(rect=(0, 0.06, 1, 1) if tag else None)
     fig.savefig(out / f"{prefix}effects.png")
     plt.close(fig)
     print(f"plots written to {out}/")

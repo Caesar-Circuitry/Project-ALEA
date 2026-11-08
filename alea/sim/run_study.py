@@ -66,7 +66,10 @@ def main(argv=None):
     seed = int(a.seed if a.seed is not None else cfg.get("seed", 24331))
     out = Path(a.out if a.out is not None else cfg.get("out", "results/study"))
     if fidelity == "hifi" and a.out is None and out == Path("results/study"):
-        out = Path(HIFI_DEFAULT_OUT)  # the YAML's fast default must not receive hifi results
+        # The YAML's fast default must not receive hifi results. We cannot tell an explicit
+        # `out: results/study` from the default, so say so rather than redirect silently.
+        out = Path(HIFI_DEFAULT_OUT)
+        print(f"fidelity hifi: output redirected from results/study to {out} (--out overrides)")
     held = results.detect_fidelity(out) if out.exists() else None
     if held is not None and held != fidelity:
         sys.exit(f"{out} holds {held} results; refusing to write {fidelity} results there")

@@ -31,7 +31,7 @@ _INT_KEYS = {
     "hive_retarget_after_tip",
     "hive_initial_nectar",
 }
-_STR_KEYS = {"fidelity", "hive_caveat"}
+_STR_KEYS = {"fidelity", "hive_caveat", "hive_alliance"}
 
 
 def detect_fidelity(out_dir) -> str | None:

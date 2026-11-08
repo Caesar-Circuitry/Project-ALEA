@@ -22,7 +22,11 @@ from alea.hifi.hive_session import SessionParams, run_sessions
 
 FIDELITY_LABEL = "hifi"
 DEFAULT_OUT = "results/study-hifi"
-LABEL_TEXT = "hifi session model; hive at rest during swing (kernel limit); not measured physics"
+LABEL_TEXT = (
+    "hifi session model; hive at rest during swing (kernel limit); not measured physics; "
+    "n_sessions, shots_per_session, shot_interval_s and retarget_after_tip are open "
+    "placeholders, not measured"
+)
 _KEYS = ("n_sessions", "shots_per_session", "shot_interval_s", "retarget_after_tip")
 
 
@@ -40,10 +44,13 @@ class HifiParams:
                 f"fidelity 'hifi' needs these open session parameters in the `hifi:` block: "
                 f"{missing} (see alea/hifi/hive_session.py; none has a default)"
             )
-        allowed = set(_KEYS) | {"initial_nectar", "tick_s", "alliance"}
+        allowed = set(_KEYS) | {"initial_nectar", "alliance"}
         unknown = sorted(set(block) - allowed)
         if unknown:
             raise ValueError(f"unknown hifi key(s) {unknown}; valid keys: {sorted(allowed)}")
+        # tick_s is deliberately not a YAML key: it is numerical resolution (dsim's 1/60 s timer
+        # step, SessionParams default), not a study knob, so it stays fixed. It is still saved
+        # (hive_tick_s) and compared on resume.
         return cls(SessionParams(**block))
 
 
@@ -58,7 +65,11 @@ def run_condition(study, cond: dict, shots: int, seed: int, batch: int, params: 
 
 
 def params_match(z, params: HifiParams) -> bool:
-    """True if a stored cond_hifi file was made with these session parameters (for resuming)."""
+    """True if a stored cond_hifi file was made with these session parameters (for resuming).
+
+    Compares every SessionParams field, including `tick_s` and `alliance` (stored as
+    `hive_tick_s`, `hive_alliance`). A file lacking them (older run) does not match.
+    """
     p = params.session
     try:
         return (
@@ -67,6 +78,8 @@ def params_match(z, params: HifiParams) -> bool:
             and float(z["hive_shot_interval_s"]) == p.shot_interval_s
             and int(z["hive_retarget_after_tip"]) == int(p.retarget_after_tip)
             and int(z["hive_initial_nectar"]) == p.initial_nectar
+            and float(z["hive_tick_s"]) == p.tick_s
+            and str(z["hive_alliance"]) == p.alliance
         )
     except KeyError:
         return False
