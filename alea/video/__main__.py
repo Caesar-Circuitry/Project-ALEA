@@ -100,7 +100,13 @@ def build_parser() -> argparse.ArgumentParser:
     rv.add_argument("--match", help="match label, e.g. Q12")
     rv.add_argument("--alliance", choices=("red", "blue"))
     rv.add_argument("--team", type=int)
-    rv.add_argument("--click-z-in", type=float, default=16.0, help="top-plate height (in)")
+    rv.add_argument(
+        "--click-z-in",
+        type=float,
+        default=16.0,
+        help="robot top-plate height in inches: placeholder default, measure the StarterBot "
+        "top-plate height",
+    )
     rv.add_argument("--start-frame", type=int, default=0)
     rv.set_defaults(func=_cmd_review)
 

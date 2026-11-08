@@ -48,6 +48,10 @@ review window, not by re-clicking. The ids are additive, so old files stay valid
 `schema_version` stays 1. In the review window, `[` / `]` cycle through all ids including the edges,
 and the title shows the point count of the selected edge (all frames pooled).
 
+`--click-z-in` (robot top-plate height, default 16.0 in) is a placeholder: measure the StarterBot
+top-plate height and pass the real value, because the analyzer back-projects robot clicks onto
+that height.
+
 ### Review keys
 
 `left/right` +-1 frame, `down/up` +-10, `pagedown/pageup` +-100, `home/end`. Modes: `c` mark
