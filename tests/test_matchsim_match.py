@@ -6,6 +6,7 @@ from alea.matchsim import rules
 from alea.matchsim.match import BREAKDOWN_KEYS, simulate_match
 from alea.matchsim.policies import ConstantCyclePolicy, NoOpPolicy
 from alea.matchsim.robot import RobotProfile
+from alea.matchsim.rules import TipBehaviour
 from alea.matchsim.shots import PlaceholderShotModel
 
 MODEL = PlaceholderShotModel()
@@ -70,14 +71,16 @@ def test_more_accurate_shot_model_scores_at_least_as_much():
 
 def test_noop_alliance_scores_only_passive_points():
     r = _match([NoOpPolicy(), NoOpPolicy()], 1)
-    assert r.red_score == 0
+    assert r.red_score == rules.POINTS_BALL_IN_UP_CELL_END * rules.NECTAR_STAGED_IN_RAISED_CELL
     assert r.tips["red"] == 0
     r = _match([NoOpPolicy(leave=True, park=True), NoOpPolicy(leave=True)], 1)
     b = r.breakdown["red"]
     assert b["leave"] == 2 * rules.POINTS_LEAVE
     assert b["park_teleop"] == rules.POINTS_PARK_TELEOP
-    assert b["tip_auto"] == b["tip_teleop"] == b["cell_end"] == 0
-    assert b["total"] == 2 * rules.POINTS_LEAVE + rules.POINTS_PARK_TELEOP
+    staged = rules.POINTS_BALL_IN_UP_CELL_END * rules.NECTAR_STAGED_IN_RAISED_CELL
+    assert b["tip_auto"] == b["tip_teleop"] == 0
+    assert b["cell_end"] == staged  # the nectar the raised cell starts with
+    assert b["total"] == 2 * rules.POINTS_LEAVE + rules.POINTS_PARK_TELEOP + staged
 
 
 def test_perfect_constant_policy_tips():
@@ -91,6 +94,41 @@ def test_perfect_constant_policy_tips():
 def test_pool_is_shared_and_bounded():
     p = ConstantCyclePolicy(cycle_time_s=4.0, balls_per_cycle=4, make_rate=1.0)
     r = _match([p, p], 0, [p, p])
-    made = sum(1 for _, _, k, d in r.events if k == "shot_made" and d["ball"] == "pollen")
     assert r.pollen_left >= 0
-    assert made <= rules.POLLEN_ON_FIELD
+    assert r.pollen_left + r.pollen_in_cells <= rules.POLLEN_ON_FIELD
+
+
+def test_nectar_staging_constants():
+    assert rules.NECTAR_STAGED_IN_RAISED_CELL == 3
+    assert rules.NECTAR_STAGED_IN_ALLIANCE_AREA == 5
+    assert rules.NECTAR_PER_ALLIANCE == 8
+
+
+def test_first_tip_needs_table_entry_for_three_nectar():
+    p = ConstantCyclePolicy(cycle_time_s=10.0, balls_per_cycle=8, make_rate=1.0)
+    r = _match([p], 0)
+    first = next(d for _, _, k, d in r.events if k == "tip")
+    assert first["nectar"] == rules.NECTAR_STAGED_IN_RAISED_CELL
+    assert first["pollen"] == rules.TIP_POLLEN_BY_NECTAR[3]
+    made_before = 0
+    for _, _, k, d in r.events:
+        if k == "tip":
+            break
+        made_before += k == "shot_made" and d["ball"] == "pollen"
+    assert made_before == rules.TIP_POLLEN_BY_NECTAR[3]  # the tipping shot is logged first
+
+
+def test_pollen_never_vanishes_in_either_tip_mode():
+    p = ConstantCyclePolicy(cycle_time_s=5.0, balls_per_cycle=4, make_rate=1.0)
+    for mode in TipBehaviour:
+        r = simulate_match([p, p], [p, p], MODEL, 2, mode)
+        assert r.tips["red"] >= 1
+        assert r.pollen_left + r.pollen_in_cells == rules.POLLEN_ON_FIELD  # nothing in flight
+
+
+def test_tip_behaviour_bottom_nectar_bonus():
+    p = ConstantCyclePolicy(cycle_time_s=5.0, balls_per_cycle=4, make_rate=1.0)
+    spill = simulate_match([p, p], [NoOpPolicy()], MODEL, 5, TipBehaviour.SPILL_TO_FIELD)
+    stay = simulate_match([p, p], [NoOpPolicy()], MODEL, 5, TipBehaviour.NECTAR_STAYS_DOWN)
+    assert spill.breakdown["red"]["nectar_bottom"] == 0
+    assert stay.breakdown["red"]["nectar_bottom"] >= rules.POINTS_BOTTOM_NECTAR * 3

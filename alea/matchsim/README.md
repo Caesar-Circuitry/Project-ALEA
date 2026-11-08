@@ -32,6 +32,7 @@ directory (default `results/matchsim/`, git-ignored). Same `--seed` gives identi
 All keys optional; missing top-level keys fall back to the built-in default match.
 
 ```yaml
+tip_behaviour: spill_to_field   # or nectar_stays_down; see Open decisions
 shot_model:
   type: placeholder        # or: table
   efficiency: 0.45         # PlaceholderShotModel args: efficiency, speed_noise_frac,
@@ -61,14 +62,29 @@ physics-reviewer and the user's sign-off. Each carries its source in `rules.py`.
 
 | Value | Source | Replaced by |
 |---|---|---|
-| Timing 30 s auto, 8 s transition, 120 s teleop, 30 s endgame | Manual section 10 Table 10-2 (as read 2026-11-08) | `alea.game` |
-| Tip 20 (auto), 20 (teleop); leave 3; park 5 auto, 5 teleop | same | `alea.game` |
-| Ball in an up-facing cell at the end 2; bottom nectar bonus 5 (reading guessed); flower 2, garden 1 (not modelled) | same | `alea.game` |
-| 40 pollen, 8 red + 8 blue nectar, 1 nectar per tip, all at 60 s left | same | `alea.game` |
-| Ranking points at 4 and 7 tips | same | `alea.game` |
-| Tip table `{8,7,6,3,1,0}` pollen by 0..5 nectar | dsim `tipPollenByNectar` | `alea.game` |
+| Timing 30 s auto, 8 s transition, 120 s teleop | Manual 10.1 | `alea.game` |
+| Endgame = last 30 s of teleop | UNVERIFIED | `alea.game` |
+| Tip 20 (auto), 20 (teleop); leave 3; park 5 auto, 5 teleop; 2 per ball in an up cell at the end | Manual Table 10-2 | `alea.game` |
+| Bottom Nectar Bonus 5 (trigger unverified, paid only in `nectar_stays_down`); flower 2, garden 1 (not modelled) | Manual Table 10-2 | `alea.game` |
+| 40 pollen; each raised cell starts with 3 nectar, 5 more wait in the alliance area (8 per alliance) | Manual 10.3.1 B | `alea.game` |
+| 1 nectar released per tip, all remaining at 60 s left | Manual 10.1 | `alea.game` |
+| Ranking points at 4 and 7 tips (SWARM RP at 16 leave+park points not modelled) | Manual Table 10-3, "all other events" (Premier differs) | `alea.game` |
+| Tip table `{8,7,6,3,1,0}` pollen by 0..5 nectar | dsim `BB_TIP_POLLEN` (= `alea/hifi/hive_constants.py`); only the 0-nectar (8) and 3-nectar (3) entries are backed by the Event Field Setup Guide | `alea.game` |
 | Assumed flywheel efficiency 0.45 | last factor of `TICKS_TO_IN_S` | hive-shot-lab calibration |
 | `PlaceholderShotModel` shape and peak, `RobotProfile` and policy defaults | guesses | video and log data, FTCScout |
+
+## Open decisions for the user
+
+- **What a tip does to the balls in the cell.** `tip_behaviour: spill_to_field` (default,
+  matches `docs/knowledge-base.md` and dsim: the lowered cell cannot hold balls) returns all of
+  them to the field (pollen to the shared pool, nectar to the owner's available nectar) and pays
+  no Bottom Nectar Bonus. `nectar_stays_down` keeps the nectar in the lowered cell and pays the
+  bonus per nectar at the end. Pollen never vanishes from the pool in either mode. The real
+  behaviour and the bonus trigger are unverified.
+- The cell that becomes raised after a tip starts empty here (the manual's 3-nectar staging is
+  applied only to the starting raised cell).
+- A tip completing in the transition counts as auto per manual 10.5; the simulator instead
+  blocks launches in the transition.
 
 ## Needs real data
 

@@ -25,9 +25,10 @@ from alea.game.biobuzz import (
 )
 from alea.matchsim.rules import (
     MATCH_END_S,
-    NECTAR_PER_ALLIANCE,
     NECTAR_RELEASE_ALL_AT_S,
     NECTAR_RELEASED_PER_TIP,
+    NECTAR_STAGED_IN_ALLIANCE_AREA,
+    NECTAR_STAGED_IN_RAISED_CELL,
     POINTS_BALL_IN_UP_CELL_END,
     POINTS_BOTTOM_NECTAR,
     POINTS_LEAVE,
@@ -35,6 +36,7 @@ from alea.matchsim.rules import (
     POINTS_PARK_TELEOP,
     POLLEN_ON_FIELD,
     MatchPhase,
+    TipBehaviour,
     phase_at,
     pollen_to_tip,
     ranking_points_for_tips,
@@ -68,8 +70,8 @@ class Hive:
     x_in: float
     up_side: int  # -1 audience cell raised, +1 rear cell raised
     cell_pollen: int = 0
-    cell_nectar: int = 0
-    down_nectar: int = 0  # nectar left in the lowered cell by earlier tips
+    cell_nectar: int = NECTAR_STAGED_IN_RAISED_CELL  # the raised cell starts with nectar
+    down_nectar: int = 0  # nectar left in the lowered cell (NECTAR_STAYS_DOWN only)
     tips_auto: int = 0
     tips_teleop: int = 0
 
@@ -82,7 +84,7 @@ class Hive:
 class AllianceState:
     name: str
     hive: Hive
-    nectar_stock: int = NECTAR_PER_ALLIANCE  # not yet released
+    nectar_stock: int = NECTAR_STAGED_IN_ALLIANCE_AREA  # not yet released
     nectar_available: int = 0
     points: dict[str, int] = field(default_factory=lambda: dict.fromkeys(BREAKDOWN_KEYS, 0))
 
@@ -95,7 +97,8 @@ class MatchResult:
     tips_auto: dict[str, int]
     ranking_points: dict[str, int]  # tip-count RPs only (placeholder thresholds)
     events: list[Event]
-    pollen_left: int
+    pollen_left: int  # pollen in the shared pool at the end
+    pollen_in_cells: int  # pollen sitting in raised cells at the end (pool + this = 40 - in flight)
 
     def score(self, alliance: str) -> int:
         return self.breakdown[alliance]["total"]
@@ -110,7 +113,10 @@ class MatchResult:
 
 
 class _World:
-    def __init__(self, shot_model: ShotSuccessModel, rng: np.random.Generator):
+    def __init__(
+        self, shot_model: ShotSuccessModel, rng: np.random.Generator, tip_behaviour: TipBehaviour
+    ):
+        self.tip_behaviour = tip_behaviour
         self.shot_model = shot_model
         self.rng = rng
         self.t_s = 0.0
@@ -262,7 +268,12 @@ class MatchContext:
             self.log(
                 "tip", {"hive": owner.name, "pollen": hive.cell_pollen, "nectar": hive.cell_nectar}
             )
-            hive.down_nectar += hive.cell_nectar
+            # the pool never loses pollen: the cell's pollen always goes back to the field
+            w.pool += hive.cell_pollen
+            if w.tip_behaviour is TipBehaviour.NECTAR_STAYS_DOWN:
+                hive.down_nectar += hive.cell_nectar
+            else:
+                owner.nectar_available += hive.cell_nectar
             hive.cell_pollen = hive.cell_nectar = 0
             hive.up_side = -hive.up_side
             rel = min(NECTAR_RELEASED_PER_TIP, owner.nectar_stock)
@@ -286,11 +297,12 @@ def simulate_match(
     blue: list[Any],
     shot_model: ShotSuccessModel,
     seed: int = 0,
+    tip_behaviour: TipBehaviour = TipBehaviour.SPILL_TO_FIELD,
 ) -> MatchResult:
     """Simulate one match. `red` and `blue` hold RobotProfile or policy objects (anything with
     `name` and `run(ctx)`). Deterministic for a given seed."""
     rng = np.random.default_rng(seed)
-    world = _World(shot_model, rng)
+    world = _World(shot_model, rng, tip_behaviour)
     heap: list[tuple[float, int, Iterator[float], MatchContext]] = []
     seq = 0
     for alliance, robots in (("red", red), ("blue", blue)):
@@ -330,4 +342,5 @@ def simulate_match(
         ranking_points={n: ranking_points_for_tips(t) for n, t in tips.items()},
         events=world.events,
         pollen_left=world.pool,
+        pollen_in_cells=sum(x.hive.cell_pollen for x in world.alliances.values()),
     )

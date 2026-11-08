@@ -38,6 +38,13 @@ Build `alea.matchsim` as an abstract, event-driven simulator, not a physics engi
 - **Placeholders for game points.** Rule values live in `alea/matchsim/rules.py`, each tagged
   with its source and "placeholder until moved to alea/game". They must move to `alea/game` in a
   physics-reviewed PR with the user's approval; until then results are indicative only.
+- **Tip behaviour is an open decision.** What a tip does to the balls in the cell, and the
+  trigger of the Bottom Nectar Bonus, are unverified. A `TipBehaviour` setting chooses:
+  `SPILL_TO_FIELD` (default; matches dsim and `docs/knowledge-base.md`: balls return to the
+  field, no bonus) or `NECTAR_STAYS_DOWN` (nectar stays and pays the bonus). Pollen never leaves
+  the shared pool in either mode. The user must decide, with the manual in hand.
+- **Initial state.** Each raised cell starts with 3 nectar and 5 nectar wait in each alliance
+  area (manual 10.3.1 B), so the first tip needs the table entry for 3 nectar.
 - **Seeds and reproducibility.** One `numpy.random.default_rng(seed)` per match, passed down
   through the context; no global random state. The runner derives one independent integer seed
   per match from the run seed with `SeedSequence.spawn`, writes it to `matches.csv`, so any

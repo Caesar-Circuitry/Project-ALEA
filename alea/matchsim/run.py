@@ -17,6 +17,7 @@ import yaml
 from alea.matchsim.match import BREAKDOWN_KEYS, MatchResult, simulate_match
 from alea.matchsim.policies import ConstantCyclePolicy, NoOpPolicy
 from alea.matchsim.robot import RobotProfile
+from alea.matchsim.rules import TipBehaviour
 from alea.matchsim.shots import PlaceholderShotModel, ShotSuccessModel, TableShotModel
 
 DEFAULT_OUT_DIR = Path("results") / "matchsim"
@@ -78,6 +79,7 @@ class MatchSetup:
     red: list[Any]
     blue: list[Any]
     shot_model: ShotSuccessModel
+    tip_behaviour: TipBehaviour
     raw: dict[str, Any]
 
 
@@ -90,6 +92,7 @@ def load_config(path: str | Path | None) -> MatchSetup:
         red=[build_robot(s) for s in raw["red"]],
         blue=[build_robot(s) for s in raw["blue"]],
         shot_model=build_shot_model(raw["shot_model"]),
+        tip_behaviour=TipBehaviour(raw.get("tip_behaviour", "spill_to_field")),
         raw=raw,
     )
 
@@ -125,7 +128,7 @@ def run_matches(setup: MatchSetup, n_matches: int, seed: int, out_dir: Path) -> 
     out_dir.mkdir(parents=True, exist_ok=True)
     rows = []
     for i, s in enumerate(match_seeds(seed, n_matches)):
-        res = simulate_match(setup.red, setup.blue, setup.shot_model, s)
+        res = simulate_match(setup.red, setup.blue, setup.shot_model, s, setup.tip_behaviour)
         rows.append(_row(i, res))
     with (out_dir / "matches.csv").open("w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0]))
