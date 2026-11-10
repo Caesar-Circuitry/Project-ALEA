@@ -23,17 +23,37 @@ They use only the standard library and run with `uv run --no-project python`.
   options) and `gh pr create`; `settings.json` makes both ask the user. Other `gh pr` writes
   (merge, edit, close, comment) stay blocked. It also blocks reads of `.env`, `*.pem`
   and `*.key` files through the shell.
-- `subagent_gate.py` (Stop, implementer only): runs `ruff check`, `ruff format --check` and
-  pytest. The implementer cannot finish while they fail. It gives up after three blocks. When
-  `alea-dev` is running, the checks run inside it with `docker exec`. Otherwise they run on the
-  host.
+- `test_gate.py` (writers): one script, three events. As `SubagentStop` in the frontmatter of
+  `implementer`, `implementer-fast` and `test-writer` it runs `gate_checks` from `repo.json`
+  (`ruff check`, `ruff format --check`, pytest). As `TaskCompleted` it lints an `impl:` or
+  `test:` task's files and runs the tests of their units. As `TeammateIdle` it does the same
+  for a writer teammate (`fast-N`, `careful-N`, `tests-N`). It gives up after three blocks.
+  When `alea-dev` is running, the checks run inside it with `docker exec`. Otherwise they run
+  on the host.
+- `guard_bash.py` (PreToolUse Bash, all agents): blocks `forbidden_commands` from `repo.json`,
+  test runs with `--deselect`, `--ignore`, `-k "not ..."` or `-p no:`, and the rulebook's
+  command-shape rules (branches with `--no-track`, no `SKIP=` on pre-commit, golden data never
+  replaced, `.env` never read).
+- `guard_tests.py` (PreToolUse Edit, Write, MultiEdit, all agents): blocks an edit that removes
+  a test, adds a skip or xfail marker, changes an existing file under `append_only_paths`
+  (golden data, applied migrations), touches a `protected_paths` file (`uv.lock`, the dsim
+  license, the Gradle wrapper), or removes a CI step, job or path filter.
+- `task_shape.py` (TaskCreated): a task subject is `impl|test|verify|safety|docs|plan: <paths
+  or all>`. The gate reads the paths to find the unit.
+- `test_touched.py` (Stop, main session): runs the tests of the units touched in the working
+  tree and shows one summary line per unit. Never blocks; skips an unchanged tree.
+- `pre_compact.py` (PreCompact): tells the compaction summary to keep the plan, the file
+  owners and open FAIL rows.
+- `teamlib.py`: shared helpers (read `repo.json`, map files to units, run a check).
 - `autoformat.py` (PostToolUse): runs `ruff format` and `ruff check --fix` on an edited `.py` file.
   It skips the frozen files.
-- `session_start.py` (SessionStart): prints a short status: branch, `.venv`, golden data and the next roadmap row.
+- `session_start.py` (SessionStart): prints a short status: branch, uncommitted files, `.venv`,
+  golden data, the next roadmap row, the active profile, the units and the open areas.
 
 The guards fail closed. If the hook cannot read its input, it blocks the call. Set
 `ALEA_ALLOW_HOST_AGENT_SHELL=1` to turn `guard_container.py` off, only with the user's approval.
 Tests are in `tests/test_guard_hook.py`, `tests/test_guard_container.py`,
-`tests/test_autoformat_hook.py` and `tests/test_session_start_hook.py`.
+`tests/test_autoformat_hook.py`, `tests/test_session_start_hook.py` and
+`tests/test_team_hooks.py`.
 
 **Roadmap phase:** all

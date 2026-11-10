@@ -1,11 +1,14 @@
 """SessionStart hook: print a short repo status that Claude Code adds to the session context.
 
-At most six lines: branch, `.venv` freshness, golden data present, the ROADMAP row marked next,
-number of agent worktrees. Never fails the session: any error is swallowed and the exit is 0.
-Pure stdlib.
+Under 20 lines: branch and uncommitted files, `.venv` freshness, golden data present, the
+ROADMAP row marked next, number of agent worktrees, then from `.claude/repo.json` the active
+profile, the units with their test commands and the open areas. Never fails the session: any
+error is swallowed and the exit is 0. Pure stdlib.
 """
 
+import contextlib
 import itertools
+import json
 import os
 import subprocess
 import sys
@@ -69,10 +72,38 @@ def worktree_count(root: Path) -> int:
     return count_agent_worktrees(proc.stdout)
 
 
+def dirty_count(root: Path) -> str:
+    proc = subprocess.run(
+        ["git", "status", "--short"], cwd=root, capture_output=True, text=True, timeout=10
+    )
+    count = len([line for line in proc.stdout.splitlines() if line.strip()])
+    return f"uncommitted files: {count}"
+
+
+def team_lines(root: Path) -> list[str]:
+    """Profile, units and open areas from `.claude/repo.json`; empty when it is missing."""
+    path = root / ".claude" / "repo.json"
+    if not path.is_file():
+        return []
+    config = json.loads(path.read_text(encoding="utf-8"))
+    prof = config.get("profile_settings", {})
+    lines = [
+        f"profile: {config.get('profile', '?')} (judges on {prof.get('judge_model', '?')}, "
+        f"team cap {prof.get('team_cap', '?')}, team from {prof.get('team_threshold', '?')} "
+        f"independent items, plan-critic {prof.get('plan_critic', '?')})"
+    ]
+    names = ", ".join(unit["name"] for unit in config.get("units", []))
+    lines.append(f"units (test commands in .claude/repo.json): {names}")
+    for area in config.get("open_areas", [])[:6]:
+        lines.append(f"open area: {area['path']}: ask {area['owner']} ({area['note']})")
+    return lines
+
+
 def summary(root: Path) -> list[str]:
     lines: list[str] = []
     steps = [
         lambda: f"branch: {current_branch(root)}",
+        lambda: dirty_count(root),
         lambda: venv_status(root),
         lambda: golden_status(root),
         lambda: _roadmap_line(root),
@@ -85,7 +116,9 @@ def summary(root: Path) -> list[str]:
             continue
         if line:
             lines.append(line)
-    return lines[:6]
+    with contextlib.suppress(Exception):
+        lines += team_lines(root)
+    return lines[:19]
 
 
 def _roadmap_line(root: Path) -> str | None:

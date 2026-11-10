@@ -57,7 +57,7 @@ def test_count_agent_worktrees() -> None:
 
 
 def test_summary_is_short_and_never_fails(tmp_path: Path) -> None:
-    assert len(mod.summary(tmp_path)) <= 6
+    assert len(mod.summary(tmp_path)) < 20
     proc = subprocess.run(
         [sys.executable, str(HOOK)],
         capture_output=True,

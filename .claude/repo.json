@@ -1,0 +1,299 @@
+{
+  "rulebook": "CLAUDE.md",
+  "workflow_doc": ".claude/AGENTIC_WORKFLOW.md",
+  "sandbox_prefix": "just dev",
+  "units": [
+    {
+      "name": "sim",
+      "prefixes": [
+        "alea/sim/",
+        "alea/game/",
+        "conf/study/",
+        "tests/golden/",
+        "tests/test_selftest",
+        "tests/test_conditions",
+        "tests/test_results",
+        "tests/test_game_constants",
+        "tests/test_frozen_files",
+        "tests/test_fidelity",
+        "tests/test_import"
+      ],
+      "build": null,
+      "test": "uv run pytest -q -k 'selftest or conditions or results or game_constants or frozen_files or fidelity or test_import'",
+      "lint": "uv run ruff check"
+    },
+    {
+      "name": "hifi",
+      "prefixes": [
+        "alea/hifi/",
+        "tests/hifi_",
+        "tests/test_hifi"
+      ],
+      "build": null,
+      "test": "uv run pytest -q -k 'test_hifi or fidelity'",
+      "lint": "uv run ruff check"
+    },
+    {
+      "name": "data",
+      "prefixes": [
+        "alea/data/",
+        "alembic.ini",
+        "tests/data/",
+        "tests/test_data",
+        "tests/make_golden_rlog.py"
+      ],
+      "build": null,
+      "test": "uv run pytest -q -k 'test_data or test_analysis_sync'",
+      "lint": "uv run ruff check"
+    },
+    {
+      "name": "analysis",
+      "prefixes": [
+        "alea/analysis/",
+        "tests/test_analysis"
+      ],
+      "build": null,
+      "test": "uv run pytest -q -k test_analysis",
+      "lint": "uv run ruff check"
+    },
+    {
+      "name": "matchsim",
+      "prefixes": [
+        "alea/matchsim/",
+        "tests/test_matchsim"
+      ],
+      "build": null,
+      "test": "uv run pytest -q -k test_matchsim",
+      "lint": "uv run ruff check"
+    },
+    {
+      "name": "video",
+      "prefixes": [
+        "alea/video/",
+        "tests/test_video"
+      ],
+      "build": null,
+      "test": "uv run pytest -q -k test_video",
+      "lint": "uv run ruff check"
+    },
+    {
+      "name": "web",
+      "prefixes": [
+        "alea/web/",
+        "tests/test_web"
+      ],
+      "build": null,
+      "test": "uv run pytest -q -k test_web",
+      "lint": "uv run ruff check"
+    },
+    {
+      "name": "tools",
+      "prefixes": [
+        "alea/tools/",
+        "tests/test_worktree_prune"
+      ],
+      "build": null,
+      "test": "uv run pytest -q -k worktree_prune",
+      "lint": "uv run ruff check"
+    },
+    {
+      "name": "claude",
+      "prefixes": [
+        ".claude/",
+        "tests/test_claude_config",
+        "tests/test_guard",
+        "tests/test_autoformat_hook",
+        "tests/test_session_start_hook",
+        "tests/test_team_hooks"
+      ],
+      "build": null,
+      "test": "uv run pytest -q -k 'claude_config or guard or _hook or team_hooks'",
+      "lint": "uv run ruff check"
+    },
+    {
+      "name": "robot",
+      "prefixes": [
+        "robot/",
+        "docs/robot-interface.md",
+        "tests/test_robot_contract"
+      ],
+      "build": "just robot",
+      "build_is_heavy": true,
+      "test": "uv run pytest -q -k robot_contract",
+      "lint": null
+    },
+    {
+      "name": "docs",
+      "prefixes": [
+        "docs/",
+        "mkdocs.yml"
+      ],
+      "build": null,
+      "test": "uv run mkdocs build --strict",
+      "lint": null
+    },
+    {
+      "name": "all",
+      "prefixes": [
+        ""
+      ],
+      "build": "just sync",
+      "test": "uv run pytest -q",
+      "lint": "uv run ruff check"
+    }
+  ],
+  "finish_checks": [
+    "just lint",
+    "just test"
+  ],
+  "gate_setup": "uv sync --all-extras --no-extra gpu --group dev -q",
+  "gate_checks": [
+    "uv run ruff check .",
+    "uv run ruff format --check .",
+    "uv run pytest -q -x -m 'not gpu and not slow'"
+  ],
+  "protected_paths": [
+    "uv.lock",
+    "alea/hifi/LICENSE-dsim",
+    "alea/hifi/DSIM_VERSION",
+    "robot/gradle/wrapper/*",
+    "robot/gradlew",
+    "robot/gradlew.bat"
+  ],
+  "frozen_paths": [
+    "alea/sim/shotsim.py",
+    "alea/sim/study.py"
+  ],
+  "append_only_paths": [
+    "tests/golden/*",
+    "alea/data/migrations/versions/*.py"
+  ],
+  "ci_paths": [
+    ".github/workflows/*.yml"
+  ],
+  "sensitive_paths": [
+    "alea/sim/",
+    "alea/game/",
+    "alea/hifi/",
+    "tests/golden/",
+    "alea/data/migrations/",
+    ".github/workflows/",
+    ".claude/hooks/",
+    ".claude/settings.json",
+    ".env",
+    "robot/"
+  ],
+  "forbidden_commands": [
+    "rm -rf",
+    "git push --force",
+    "git push -f",
+    "git push -u",
+    "git push --set-upstream",
+    "git push origin main",
+    "git commit --no-verify",
+    "git commit -n ",
+    "git reset --hard",
+    "git clean",
+    "gh pr merge",
+    "gh release",
+    "uv publish",
+    "twine upload",
+    "docker push",
+    "adb ",
+    "gradlew installDebug",
+    "gradlew install",
+    "ALEA_ALLOW_PHYSICS_EDIT",
+    "ALEA_GATE_SKIP",
+    "ALEA_ALLOW_HOST_AGENT_SHELL"
+  ],
+  "test_globs": [
+    "tests/test_*.py",
+    "tests/hifi_replay*.py"
+  ],
+  "test_def_pattern": "^\\s*(?:async\\s+)?def\\s+(test_\\w+)",
+  "skip_marker_pattern": "pytest\\.mark\\.(skip|xfail)\\b|pytest\\.(skip|xfail)\\(|unittest\\.skip|^\\s*__test__\\s*=\\s*False",
+  "writer_agents": [
+    "implementer",
+    "implementer-fast",
+    "test-writer"
+  ],
+  "writer_name_pattern": "^(fast|careful|tests)-\\d+$",
+  "heavy_checks": [
+    {
+      "name": "robot-build",
+      "run": "just robot",
+      "needs": "JDK 17 and the Android SDK; several minutes on a cold Gradle cache",
+      "where": "host or CI robot job"
+    },
+    {
+      "name": "gpu-tests",
+      "run": "just gpu-test",
+      "needs": "an NVIDIA GPU (Brev); see .github/workflows/gpu-tests.md",
+      "where": "GPU machine"
+    },
+    {
+      "name": "study-smoke",
+      "run": "just study 10000 cpu",
+      "needs": "nothing external; about a minute on CPU; writes under results/",
+      "where": "container"
+    },
+    {
+      "name": "java-compare",
+      "run": "see alea/sim/verification/README.md",
+      "needs": "the Java Code Sim builds on the team machine",
+      "where": "team machine only"
+    }
+  ],
+  "open_areas": [
+    {
+      "path": "alea/sim/shotsim.py",
+      "owner": "the user (CODEOWNERS)",
+      "note": "frozen; only through /physics-change"
+    },
+    {
+      "path": "alea/sim/study.py",
+      "owner": "the user (CODEOWNERS)",
+      "note": "frozen; only through /physics-change"
+    },
+    {
+      "path": "tests/golden/golden_shots.npy",
+      "owner": "the user",
+      "note": "never regenerate; ask for the file"
+    }
+  ],
+  "judge_agents": [
+    "planner",
+    "verifier",
+    "physics-reviewer"
+  ],
+  "profile": "max",
+  "profile_settings": {
+    "judge_model": "opus",
+    "plan_critic": "always",
+    "team_cap": 5,
+    "team_threshold": 2
+  },
+  "assumed": [
+    {
+      "key": "profile",
+      "value": "max",
+      "why": "the usage plan cannot be read from the repo; switch with `just profile pro`"
+    },
+    {
+      "key": "forbidden_commands: adb, gradlew install",
+      "why": "the rulebook does not mention robot hardware; deploying to a robot is treated as never-by-an-agent"
+    },
+    {
+      "key": "append_only_paths: alea/data/migrations/versions",
+      "why": "the rulebook does not say applied migrations are immutable; assumed, as real match databases may already be on revision 0002"
+    },
+    {
+      "key": "env CLAUDE_CODE_ENABLE_TODO_TOOLS",
+      "why": "the docs say to export it before starting Claude Code; setting it in settings.json env is assumed to work. Without the Task tools the team coordinates by messages and the SubagentStop and TeammateIdle gates still apply"
+    },
+    {
+      "key": "team lead agent_type",
+      "why": "guard_lead.py keys on agent_type == lead; assumed unchanged when the lead becomes a team lead"
+    }
+  ]
+}
