@@ -47,3 +47,4 @@ nav:
       - 0005 Hifi dsim port: decisions/0005-hifi-dsim-port.md
       - 0006 Agent sandbox: decisions/0006-agent-sandbox.md
       - 0007 Launch detection: decisions/0007-launch-detection.md
+      - 0014 Agent team: decisions/0014-agent-team.md

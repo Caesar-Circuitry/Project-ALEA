@@ -15,17 +15,26 @@ subagents, each pinned to a model:
 | Need | Spawn | Model |
 |---|---|---|
 | find files, symbols, call paths | `explorer` | Haiku |
-| write or change code, tests, CI, configs | `implementer` | Sonnet |
+| plan a change by file ownership; attack the plan | `planner`, `plan-critic` | Opus*, Sonnet |
+| `[careful]` items: logic, multi-file code, CI, configs | `implementer` | Sonnet |
+| `[fast]` items: one file, spec fully given | `implementer-fast` | Haiku |
+| write the tests a plan names | `test-writer` | Sonnet |
 | write or change docs, READMEs, decision records | `docs-writer` | Haiku |
-| review anything under `alea/sim`, `alea/game`, `alea/hifi`, `tests/golden` | `physics-reviewer` | Opus |
-| check a finished branch before /pr | `verifier` | Sonnet |
+| safety review: `alea/sim`, `alea/game`, `alea/hifi`, `tests/golden`, other sensitive paths | `physics-reviewer` | Opus* |
+| check a working tree or branch before /pr | `verifier` | Opus* |
+| run a heavy check (robot build, GPU tests) | `heavy-check-operator` | Sonnet |
 | diagnose a CI failure | `ci-diagnoser` | Opus |
 | periodic audit of practices, security, AI mistakes | `auditor` | Opus |
 | coordinate a multi-agent, multi-PR job | `orchestrator` | Fable, asks the user first |
 
+\* Opus on the `max` profile, Sonnet on `pro`; switch with `just profile max|pro`.
 All Sonnet and Haiku work can consult Opus through the built-in advisor (`advisorModel: opus` in `.claude/settings.json`).
 
-One subagent per task, worktree isolation when two run at once, short summaries back.
+Writers never judge and judges never edit. Tests are the default proof; heavy checks are an
+escalation. `/feature <what>` runs the whole loop: plan, approval, parallel writers on disjoint
+files (an agent team for a big plan), verifier, safety review, docs; `/plan`, `/verify`,
+`/new-unit`, `/heavy` run single steps. Units, commands, protected paths and the profile live
+in `.claude/repo.json`.
 The full policy, including when to escalate a model, is in `.claude/AGENTIC_WORKFLOW.md`.
 The PR stages, what is done and what is next are in `.claude/ROADMAP.md`; read it before
 starting a PR.
@@ -34,7 +43,10 @@ starting a PR.
 
 - Edits to `alea/sim/shotsim.py` and `alea/sim/study.py` are blocked. They must stay identical
   to the Java Code Sim. The rare approved change goes through `/physics-change`.
-- An `implementer` cannot finish while `ruff check`, `ruff format --check` or `pytest` fail.
+- A writer (`implementer`, `implementer-fast`, `test-writer`) cannot finish while `ruff check`,
+  `ruff format --check` or `pytest` fail; a team task cannot close while its unit's tests fail.
+- Tests are not removed, skipped or deselected; golden files and applied migrations are
+  append-only; `uv.lock` is not hand-edited; CI steps are not removed (`guard_tests.py`, `guard_bash.py`).
 - `git push` asks the user. `/pr` opens the PR with `gh pr create`, which also asks. Spawning `orchestrator` asks the user.
 - Every agent except the lead runs shell work in the container `alea-dev`, through `just dev`
   (`guard_container.py`). File edits stay inside the repo. Decision 0006.
