@@ -51,6 +51,10 @@ robot:
 worktree-prune:
     uv run python -m alea.tools.worktree_prune
 
+# Show or switch the agent team's usage profile: `just profile`, `just profile max`, `just profile pro`
+profile name="--get":
+    uv run --no-project python .claude/profile.py {{name}}
+
 # --- Agent sandbox (CPU dev container). The lead stays on the host; every other agent runs its
 # shell work through `just dev ...`. Needs only `docker`. Push credentials never enter it.
 # The repo is mounted at its own host path (not /workspace) so a git worktree's `.git` file, which

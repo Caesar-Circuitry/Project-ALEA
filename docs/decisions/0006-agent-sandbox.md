@@ -43,7 +43,7 @@ Options considered:
 - `just dev` checks the overlays before each run. If the host rewrote `.git/config` or `.env`,
   the overlay is gone and `just dev` refuses until the user runs `just dev-down` and
   `just dev-up`.
-- `.claude/hooks/subagent_gate.py` runs its checks in the container when it is running, and on
+- `.claude/hooks/test_gate.py` (formerly `subagent_gate.py`) runs its checks in the container when it is running, and on
   the host when it is not.
 - `ALEA_ALLOW_HOST_AGENT_SHELL=1` disables the guard. It is an emergency bypass, and only the
   user's explicit approval allows it.

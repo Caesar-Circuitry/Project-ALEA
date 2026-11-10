@@ -4,8 +4,11 @@
   "advisorModel": "opus",
   "agent": "lead",
   "env": {
-    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_ENABLE_TODO_TOOLS": "1"
   },
+  "subagentPromptCacheTtl": "1h",
   "permissions": {
     "allow": [
       "Bash(uv sync*)",
@@ -38,7 +41,22 @@
       "Bash(grep *)",
       "Bash(rg *)",
       "Bash(wc *)",
-      "Bash(shasum *)"
+      "Bash(shasum *)",
+      "Read",
+      "Grep",
+      "Glob",
+      "WebFetch(domain:code.claude.com)",
+      "WebFetch(domain:docs.python.org)",
+      "WebFetch(domain:docs.pytest.org)",
+      "WebFetch(domain:docs.astral.sh)",
+      "WebFetch(domain:nvidia.github.io)",
+      "WebFetch(domain:numpy.org)",
+      "WebFetch(domain:docs.sqlalchemy.org)",
+      "WebFetch(domain:alembic.sqlalchemy.org)",
+      "WebFetch(domain:docs.streamlit.io)",
+      "WebFetch(domain:docs.opencv.org)",
+      "WebFetch(domain:ftc-docs.firstinspires.org)",
+      "WebFetch(domain:pedropathing.com)"
     ],
     "ask": [
       "Agent(orchestrator)",
@@ -54,7 +72,25 @@
       "Bash(cat .env)",
       "Bash(cat .env.local)",
       "Bash(cat ./.env)",
-      "Bash(cat ./.env.local)"
+      "Bash(cat ./.env.local)",
+      "Edit(./uv.lock)",
+      "Edit(./alea/hifi/LICENSE-dsim)",
+      "Edit(./alea/hifi/DSIM_VERSION)",
+      "Edit(./robot/gradle/wrapper/*)",
+      "Edit(./robot/gradlew)",
+      "Edit(./robot/gradlew.bat)",
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean *)",
+      "Bash(git commit --no-verify*)",
+      "Bash(gh pr merge*)",
+      "Bash(gh release *)",
+      "Bash(uv publish*)",
+      "Bash(twine upload*)",
+      "Bash(docker push*)",
+      "Bash(adb *)"
     ]
   },
   "hooks": {
@@ -84,6 +120,30 @@
             "statusMessage": "container guard"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_bash.py\"",
+            "timeout": 20,
+            "onFailure": "block",
+            "statusMessage": "bash guard"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_tests.py\"",
+            "timeout": 20,
+            "onFailure": "block",
+            "statusMessage": "test guard"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -106,6 +166,70 @@
             "type": "command",
             "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/session_start.py\"",
             "timeout": 20
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/test_touched.py\"",
+            "timeout": 600,
+            "statusMessage": "tests for touched units"
+          }
+        ]
+      }
+    ],
+    "TaskCreated": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/task_shape.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/test_gate.py\"",
+            "timeout": 900,
+            "statusMessage": "task gate: lint + unit tests"
+          },
+          {
+            "type": "agent",
+            "prompt": "A task is being marked completed. Its hook input: $ARGUMENTS\nIf the task subject does not start with `impl:` or `test:`, answer ok. Otherwise read the files named in the subject and their tests, and compare with the rulebook CLAUDE.md. Answer ok=false with one sentence if the work weakens, skips or deletes a test; hardcodes a secret, URL, port or environment value that the rulebook says must be configuration; puts a game value outside the game package; or breaks a rule the rulebook marks as physics, security or data integrity (frozen files, golden data, applied migrations). Otherwise answer ok=true. Judge only what you read; no style.",
+            "model": "sonnet",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/test_gate.py\"",
+            "timeout": 900,
+            "statusMessage": "teammate gate: lint + unit tests"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project python \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre_compact.py\"",
+            "timeout": 10
           }
         ]
       }
