@@ -42,7 +42,7 @@ dev = [
   "jupyterlab>=4.3",
   "jupytext>=1.16",
   "nbstripout>=0.8",
-  "mkdocs-material>=9.5",
+  "mkdocs-material>=9.8.1",
 ]
 
 [tool.uv]
